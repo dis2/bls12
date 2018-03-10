@@ -1,14 +1,12 @@
 package bls12
 
-// #cgo CFLAGS: -std=c99  -Wall -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native
-// -DBN_PRECI=384 -DALLOC=DYNAMIC -DALIGN=8 -DARITH=EASY
+// #cgo CFLAGS: -std=c99 -O2 -I. -DARCH=X64 -Irelic/include -Irelic/src -Irelic/include/low -Wno-unused -DALLOC=AUTO -Wno-discarded-qualifiers
 // #include "relic_core.h"
-// bn_t _bn_new() { bn_t t; bn_new(t); return t; };
+// void _bn_new(bn_t t) { bn_new(t); };
 // void _bn_free(bn_t t) { bn_free(t); };
 import "C"
 import (
 	"math/big"
-	"os"
 )
 
 var r *big.Int

@@ -5,12 +5,12 @@ package bls12
 // #include "relic_bn.h"
 // void _ep_add(ep_t r, const ep_t p, const ep_t q) { ep_add(r, p, q); }
 // void _ep_neg(ep_t r, const ep_t p) { ep_neg(r, p); }
-// void _ep_mul(ep_t r, const ep_t p, const bn_t k) { ep_mul(r, p, k); }
+// void _ep_mul(ep_t r, const ep_t p, const bn_st *k) { ep_mul(r, p, k); }
 // void _fp_rdc_monty(fp_t c, dv_t a) { fp_rdc_monty(c, a); };
 // int ep_y_is_higher(const ep_t);
 // void monty_reduce(uint8_t *bin, int len);
-// bn_t _bn_new();
-// void _bn_free(bn_t t);
+// void _bn_new(bn_st *t);
+// void _bn_free(bn_st *t);
 import "C"
 import (
 	"errors"
@@ -41,21 +41,23 @@ func (ep *EP) Copy() *EP {
 }
 
 func (ep *EP) ScalarMult(s []byte) *EP {
-	bn := C._bn_new()
-	defer C._bn_free(bn)
-	C.bn_read_bin(bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	var bn C.bn_st
+	C._bn_new(&bn)
+	defer C._bn_free(&bn)
+	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
-	C._ep_mul(&ep.st, &ep.st, bn)
+	C._ep_mul(&ep.st, &ep.st, &bn)
 	checkError()
 	return ep
 }
 
 func (ep *EP) ScalarBaseMult(s []byte) *EP {
-	bn := C._bn_new()
-	defer C._bn_free(bn)
-	C.bn_read_bin(bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	var bn C.bn_st
+	C._bn_new(&bn)
+	defer C._bn_free(&bn)
+	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
-	C.ep_mul_gen(&ep.st, bn)
+	C.ep_mul_gen(&ep.st, &bn)
 	checkError()
 	return ep
 }
