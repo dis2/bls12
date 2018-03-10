@@ -11,8 +11,6 @@ package bls12
 // void ep2_read_x(ep2_t ep2, uint8_t* bin, int len);
 // void ep2_mul_cof_b12(ep2_t r, ep2_t p); // unexported, don't @ me
 // void ep2_scale_by_cofactor(ep2_t p);
-// void _bn_new(bn_st *);
-// void _bn_free(bn_st *t);
 import "C"
 import "errors"
 
@@ -49,8 +47,6 @@ func (ep2 *EP2) SetOne() *EP2 {
 
 func (ep2 *EP2) ScalarMult(s []byte) *EP2 {
 	var bn C.bn_st
-	C._bn_new(&bn)
-	defer C._bn_free(&bn)
 	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
 	C._ep2_mul(&ep2.t, &ep2.t, &bn)

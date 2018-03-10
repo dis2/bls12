@@ -9,8 +9,6 @@ package bls12
 // void _fp_rdc_monty(fp_t c, dv_t a) { fp_rdc_monty(c, a); };
 // int ep_y_is_higher(const ep_t);
 // void monty_reduce(uint8_t *bin, int len);
-// void _bn_new(bn_st *t);
-// void _bn_free(bn_st *t);
 import "C"
 import (
 	"errors"
@@ -42,8 +40,6 @@ func (ep *EP) Copy() *EP {
 
 func (ep *EP) ScalarMult(s []byte) *EP {
 	var bn C.bn_st
-	C._bn_new(&bn)
-	defer C._bn_free(&bn)
 	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
 	C._ep_mul(&ep.st, &ep.st, &bn)
@@ -53,8 +49,6 @@ func (ep *EP) ScalarMult(s []byte) *EP {
 
 func (ep *EP) ScalarBaseMult(s []byte) *EP {
 	var bn C.bn_st
-	C._bn_new(&bn)
-	defer C._bn_free(&bn)
 	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
 	C.ep_mul_gen(&ep.st, &bn)

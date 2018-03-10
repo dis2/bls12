@@ -2,8 +2,6 @@ package bls12
 
 // #cgo CFLAGS: -std=c99 -O2 -I. -DARCH=X64 -Irelic/include -Irelic/src -Irelic/include/low -Wno-unused -DALLOC=AUTO -Wno-discarded-qualifiers
 // #include "relic_core.h"
-// void _bn_new(bn_t t) { bn_new(t); };
-// void _bn_free(bn_t t) { bn_free(t); };
 import "C"
 import (
 	"math/big"
