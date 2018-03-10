@@ -213,6 +213,8 @@
 #include "low/easy/relic_fpx_rdc_low.c"
 #include "low/easy/relic_fpx_sqr_low.c"
 
+#ifndef __MINGW64__
+
 #define fp_muln_low fp_muln_low_
 #define fp_mulm_low fp_mulm_low_
 #include "low/easy/relic_fp_mul_low.c"
@@ -222,3 +224,10 @@
 #define fp_lsh1_low fp_lsh1_low_
 #define fp_rsh1_low fp_rsh1_low_
 #include "low/easy/relic_fp_shift_low.c"
+
+#else
+#include "low/easy/relic_fp_add_low.c"
+#include "low/easy/relic_fp_shift_low.c"
+#include "low/easy/relic_fp_mul_low.c"
+#include "low/easy/relic_fp_rdc_low.c"
+#endif
