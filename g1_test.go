@@ -1,25 +1,23 @@
-package bls12_test
+package bls12
 
 import (
 	"bytes"
 	"io/ioutil"
 	"testing"
-
-	"github.com/FiloSottile/powersoftau/bls12"
 )
 
 func TestVectorG1(t *testing.T) {
 	t.Run("Uncompressed", func(t *testing.T) {
 		var (
 			data = readFile(t, "testdata/g1_uncompressed_valid_test_vectors.dat")
-			ep   = (&bls12.EP{}).SetZero()
-			a    = &bls12.EP{}
-			one  = (&bls12.EP{}).SetOne()
+			ep   = (&EP{}).SetZero()
+			a    = &EP{}
+			one  = (&EP{}).SetOne()
 			d    = data
 		)
 		for i := 0; i < 1000; i++ {
-			t.Logf("%d <- %x", i, d[:bls12.G1UncompressedSize])
-			_, err := a.DecodeUncompressed(d[:bls12.G1UncompressedSize])
+			t.Logf("%d <- %x", i, d[:G1UncompressedSize])
+			_, err := a.DecodeUncompressed(d[:G1UncompressedSize])
 			if err != nil {
 				t.Errorf("%d: failed decoding: %v", i, err)
 			}
@@ -28,24 +26,24 @@ func TestVectorG1(t *testing.T) {
 			}
 			buf := ep.EncodeUncompressed()
 			t.Logf("%d -> %x", i, buf)
-			if !bytes.Equal(buf, d[:bls12.G1UncompressedSize]) {
+			if !bytes.Equal(buf, d[:G1UncompressedSize]) {
 				t.Errorf("%d: different encoding", i)
 			}
-			d = d[bls12.G1UncompressedSize:]
+			d = d[G1UncompressedSize:]
 			ep.Add(one)
 		}
 	})
 	t.Run("Compressed", func(t *testing.T) {
 		var (
 			data = readFile(t, "testdata/g1_compressed_valid_test_vectors.dat")
-			ep   = (&bls12.EP{}).SetZero()
-			a    = &bls12.EP{}
-			one  = (&bls12.EP{}).SetOne()
+			ep   = (&EP{}).SetZero()
+			a    = &EP{}
+			one  = (&EP{}).SetOne()
 			d    = data
 		)
 		for i := 0; i < 1000; i++ {
-			t.Logf("%d <- %x", i, d[:bls12.G1CompressedSize])
-			_, err := a.DecodeCompressed(d[:bls12.G1CompressedSize])
+			t.Logf("%d <- %x", i, d[:G1CompressedSize])
+			_, err := a.DecodeCompressed(d[:G1CompressedSize])
 			if err != nil {
 				t.Errorf("%d: failed decoding: %v", i, err)
 			}
@@ -54,10 +52,10 @@ func TestVectorG1(t *testing.T) {
 			}
 			buf := ep.EncodeCompressed()
 			t.Logf("%d -> %x", i, buf)
-			if !bytes.Equal(buf, d[:bls12.G1CompressedSize]) {
+			if !bytes.Equal(buf, d[:G1CompressedSize]) {
 				t.Errorf("%d: different encoding", i)
 			}
-			d = d[bls12.G1CompressedSize:]
+			d = d[G1CompressedSize:]
 			ep.Add(one)
 		}
 	})
