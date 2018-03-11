@@ -29,7 +29,7 @@ func (q *GT) Pair(p1 *G1, p2 *G2) *GT {
 }
 
 // c = a + b
-func (c *GT) Add(a,b *GT) *GT {
+func (c *GT) Add(a, b *GT) *GT {
 	C._fp12_mul(&c.st[0], &a.st[0], &b.st[0])
 	return c
 }
@@ -63,4 +63,3 @@ func (p *GT) Unmarshal(in []byte) ([]byte, error) {
 	C.fp12_read_bin(&p.st[0], (*C.uint8_t)(&in[0]), G1Size)
 	return in[GTSize:], nil
 }
-

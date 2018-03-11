@@ -59,9 +59,8 @@ func (p *G2) IsZero() bool {
 }
 
 const (
-	Fq2ElementSize     = 96
-	G2Size   = Fq2ElementSize
-	G2UncompressedSize = 2 * Fq2ElementSize
+	G2Size             = 96
+	G2UncompressedSize = 2 * G2Size
 )
 
 // Unmarshal a point on G2. It consumes either G2Size or
@@ -78,21 +77,21 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 	if !compressed && len(in) < G2UncompressedSize {
 		return nil, errors.New("insufficient data to decode point")
 	}
-	var bin [G2UncompressedSize+1]byte
+	var bin [G2UncompressedSize + 1]byte
 
 	// swap c0 and c1
-	copy(bin[:], in[Fq2ElementSize/2:Fq2ElementSize])
-	copy(bin[Fq2ElementSize/2:], in[:Fq2ElementSize/2])
-	bin[Fq2ElementSize/2] &= serializationMask
+	copy(bin[:], in[G2Size/2:G2Size])
+	copy(bin[G2Size/2:], in[:G2Size/2])
+	bin[G2Size/2] &= serializationMask
 
 	// Big Y, but we're not compressed, or infinity is serialized
-	if ((in[0]&serializationBigY != 0) == !compressed || (in[0]&serializationInfinity != 0))  {
+	if (in[0]&serializationBigY != 0) == !compressed || (in[0]&serializationInfinity != 0) {
 		return nil, errors.New("high Y bit improperly set")
 	}
 
 	if in[0]&serializationInfinity != 0 {
 		// Check that rest is zero
-		for _, v := range bin[1:inlen+1] {
+		for _, v := range bin[1 : inlen+1] {
 			if v != 0 {
 				return nil, errors.New("invalid infinity encoding")
 			}
@@ -126,7 +125,7 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 
 // Marshal the point, compressed to X and sign.
 func (p *G2) Marshal() (res []byte) {
-	var bin [G2Size+1]byte
+	var bin [G2Size + 1]byte
 	res = bin[1:]
 	if C.ep2_is_infty(&p.st) == 1 {
 		res[0] |= serializationInfinity | serializationCompressed
@@ -135,9 +134,9 @@ func (p *G2) Marshal() (res []byte) {
 	C.ep2_norm(&p.st, &p.st)
 	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2Size+1, &p.st, 1)
 
-	var bin2 [G2Size+1]byte
-	copy(bin2[1:], res[Fq2ElementSize/2:Fq2ElementSize])
-	copy(bin2[1+Fq2ElementSize/2:], res[:Fq2ElementSize/2])
+	var bin2 [G2Size + 1]byte
+	copy(bin2[1:], res[G2Size/2:G2Size])
+	copy(bin2[1+G2Size/2:], res[:G2Size/2])
 	res = bin2[1:]
 	res[0] |= serializationCompressed
 
@@ -151,7 +150,7 @@ func (p *G2) Marshal() (res []byte) {
 
 // Marshal the point, as uncompressed XY.
 func (p *G2) MarshalUncompressed() (res []byte) {
-	var bin [G2UncompressedSize+1]byte
+	var bin [G2UncompressedSize + 1]byte
 	res = bin[1:]
 
 	if C.ep2_is_infty(&p.st) == 1 {
@@ -159,10 +158,9 @@ func (p *G2) MarshalUncompressed() (res []byte) {
 		return
 	}
 	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2UncompressedSize+1, &p.st, 0)
-	var bin2 [G2Size+1]byte
-	copy(bin2[1:], res[Fq2ElementSize/2:Fq2ElementSize])
-	copy(bin2[1+Fq2ElementSize/2:], res[:Fq2ElementSize/2])
+	var bin2 [G2Size + 1]byte
+	copy(bin2[1:], res[G2Size/2:G2Size])
+	copy(bin2[1+G2Size/2:], res[:G2Size/2])
 	res = bin2[1:]
 	return
 }
-

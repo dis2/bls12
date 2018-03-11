@@ -19,4 +19,3 @@ func (s *Scalar) FromBytes(buf []byte) *Scalar {
 	C.bn_read_bin(&s.st, (*C.uint8_t)(&buf[0]), C.int(len(buf)))
 	return s
 }
-

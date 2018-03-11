@@ -54,9 +54,8 @@ func (p *G1) Equal(q *G1) bool {
 }
 
 const (
-	FqElementSize      = 48
-	G1Size   = FqElementSize
-	G1UncompressedSize = 2 * FqElementSize
+	G1Size             = 48
+	G1UncompressedSize = 2 * G1Size
 
 	// https://github.com/ebfull/pairing/tree/master/src/bls12_381#serialization
 	serializationMask       = (1 << 5) - 1
@@ -64,7 +63,6 @@ const (
 	serializationInfinity   = 1 << 6
 	serializationBigY       = 1 << 5
 )
-
 
 // Unmarshal a point on G1. It consumes either G1Size or
 // G1UncompressedSize, depending on how the point was marshalled.
@@ -80,19 +78,18 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 	if !compressed && len(in) < G1UncompressedSize {
 		return nil, errors.New("insufficient data to decode point")
 	}
-	var bin [G1UncompressedSize+1]byte
+	var bin [G1UncompressedSize + 1]byte
 	copy(bin[1:], in[:inlen])
 	bin[1] &= serializationMask
 
 	// Big Y, but we're not compressed, or infinity is serialized
-	if ((in[0]&serializationBigY != 0) == !compressed || (in[0]&serializationInfinity != 0))  {
+	if (in[0]&serializationBigY != 0) == !compressed || (in[0]&serializationInfinity != 0) {
 		return nil, errors.New("high Y bit improperly set")
 	}
 
-
 	if in[0]&serializationInfinity != 0 {
 		// Check that rest is zero
-		for _, v := range bin[1:inlen+1] {
+		for _, v := range bin[1 : inlen+1] {
 			if v != 0 {
 				return nil, errors.New("invalid infinity encoding")
 			}
@@ -122,7 +119,7 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 
 // Marshal the point, compressed to X and sign.
 func (p *G1) Marshal() (res []byte) {
-	var bin [G1Size+1]byte
+	var bin [G1Size + 1]byte
 	res = bin[1:]
 	res[0] |= serializationCompressed
 
@@ -143,7 +140,7 @@ func (p *G1) Marshal() (res []byte) {
 
 // Marshal the point, as uncompressed XY.
 func (p *G1) MarshalUncompressed() (res []byte) {
-	var bin [G1UncompressedSize+1]byte
+	var bin [G1UncompressedSize + 1]byte
 	res = bin[1:]
 
 	if C.ep_is_infty(&p.st) == 1 {
@@ -153,4 +150,3 @@ func (p *G1) MarshalUncompressed() (res []byte) {
 	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1UncompressedSize+1, &p.st, 0)
 	return
 }
-
