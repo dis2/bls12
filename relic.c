@@ -1,3 +1,4 @@
+
 #include "relic_bench.c"
 #include "relic_conf.c"
 #include "relic_core.c"

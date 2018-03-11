@@ -83,7 +83,7 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 	bin[1] &= serializationMask
 
 	// Big Y, but we're not compressed, or infinity is serialized
-	if (in[0]&serializationBigY != 0) == !compressed || (in[0]&serializationInfinity != 0) {
+	if (in[0]&serializationBigY != 0) && (!compressed || (in[0]&serializationInfinity != 0)) {
 		return nil, errors.New("high Y bit improperly set")
 	}
 
@@ -102,11 +102,9 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 	if compressed {
 		bin[0] = 2
 		C.ep_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G1Size+1)
-
 		var yneg C.fp_st
-		C._fp_neg(&yneg[0], &p.st.y[0])
-		// yneg > y?
-		if (C.fp_cmp(&yneg[0], &p.st.y[0]) == C.CMP_GT) == (in[0]&serializationBigY != 0) {
+
+		if negativeIsBigger(&yneg[0], &p.st.y[0]) != (in[0]&serializationBigY != 0) {
 			p.st.y = yneg
 		}
 		return in[G1Size:], nil
@@ -121,18 +119,17 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 func (p *G1) Marshal() (res []byte) {
 	var bin [G1Size + 1]byte
 	res = bin[1:]
-	res[0] |= serializationCompressed
 
 	if C.ep_is_infty(&p.st) == 1 {
-		res[0] |= serializationInfinity
+		res[0] = serializationInfinity | serializationCompressed
 		return
 	}
 	C.ep_norm(&p.st, &p.st)
 	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1Size+1, &p.st, 1)
+	res[0] |= serializationCompressed
 
 	var yneg C.fp_st
-	C._fp_neg(&yneg[0], &p.st.y[0])
-	if C.fp_cmp(&yneg[0], &p.st.y[0]) == C.CMP_GT {
+	if negativeIsBigger(&yneg[0], &p.st.y[0]) {
 		res[0] |= serializationBigY
 	}
 	return

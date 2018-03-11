@@ -79,13 +79,8 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 	}
 	var bin [G2UncompressedSize + 1]byte
 
-	// swap c0 and c1
-	copy(bin[:], in[G2Size/2:G2Size])
-	copy(bin[G2Size/2:], in[:G2Size/2])
-	bin[G2Size/2] &= serializationMask
-
-	// Big Y, but we're not compressed, or infinity is serialized
-	if (in[0]&serializationBigY != 0) == !compressed || (in[0]&serializationInfinity != 0) {
+	// Big Y set, but we're not compressed, or infinity is serialized
+	if (in[0]&serializationBigY != 0) && (!compressed || (in[0]&serializationInfinity != 0)) {
 		return nil, errors.New("high Y bit improperly set")
 	}
 
@@ -101,24 +96,29 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 		return in[inlen:], nil
 	}
 
+	// swap c0 and c1
+	bin[0] = 4
+	copy(bin[1:], in[G2Size/2:G2Size])
+	copy(bin[1+G2Size/2:], in[:G2Size/2])
+	bin[1+G2Size/2] &= serializationMask
+
 	if compressed {
-		bin[0] = 2
-		C.ep2_read_x(&p.st, (*C.uint8_t)(&bin[0]), G2Size+1)
+		C.ep2_read_x(&p.st, (*C.uint8_t)(&bin[1]), G2Size)
 		if C.ep2_upk(&p.st, &p.st) == 0 {
 			return nil, errors.New("no square root found")
 		}
 
 		var yneg C.fp_st
-		C._fp_neg(&yneg[0], &p.st.y[1][0])
-		// yneg > y, compares only c1
-		if (C.fp_cmp(&yneg[0], &p.st.y[1][0]) == C.CMP_GT) == (in[0]&serializationBigY != 0) {
+		if negativeIsBigger(&yneg[0], &p.st.y[1][0]) != (in[0]&serializationBigY != 0) {
 			p.st.y[1] = yneg
 			// negate c0 too
 			C._fp_neg(&p.st.y[0][0], &p.st.y[0][0])
 		}
+
 		return in[G2Size:], nil
 	}
-
+	copy(bin[1+G2Size:], in[G2Size+G2Size/2:])
+	copy(bin[1+G2Size+G2Size/2:], in[G2Size:])
 	C.ep2_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G2UncompressedSize+1)
 	return in[G2UncompressedSize:], nil
 }
@@ -139,10 +139,8 @@ func (p *G2) Marshal() (res []byte) {
 	copy(bin2[1+G2Size/2:], res[:G2Size/2])
 	res = bin2[1:]
 	res[0] |= serializationCompressed
-
 	var yneg C.fp_st
-	C._fp_neg(&yneg[0], &p.st.y[1][0])
-	if C.fp_cmp(&yneg[0], &p.st.y[1][0]) == C.CMP_GT {
+	if negativeIsBigger(&yneg[0], &p.st.y[1][0]) {
 		res[0] |= serializationBigY
 	}
 	return
@@ -158,9 +156,10 @@ func (p *G2) MarshalUncompressed() (res []byte) {
 		return
 	}
 	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2UncompressedSize+1, &p.st, 0)
-	var bin2 [G2Size + 1]byte
+	var bin2 [G2UncompressedSize + 1]byte
 	copy(bin2[1:], res[G2Size/2:G2Size])
 	copy(bin2[1+G2Size/2:], res[:G2Size/2])
-	res = bin2[1:]
-	return
+	copy(bin2[1+G2Size:], res[G2Size+G2Size/2:])
+	copy(bin2[1+G2Size+G2Size/2:], res[G2Size:])
+	return bin2[1:]
 }
