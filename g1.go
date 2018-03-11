@@ -5,8 +5,8 @@ package bls12
 // #include "relic_ep.h"
 // void _ep_add(ep_t r, const ep_t p, const ep_t q) { ep_add(r, p, q); }
 // void _ep_neg(ep_t r, const ep_t p) { ep_neg(r, p); }
-// void _fp_neg(fp_t r, const fp_t p) { fp_neg(r, p); }
 // void _ep_mul(ep_t r, const ep_t p, const bn_st *k) { ep_mul(r, p, k); }
+// void _fp_neg(fp_t r, const fp_t p);
 import "C"
 import "errors"
 
@@ -49,7 +49,7 @@ func (p *G1) Add(q *G1) *G1 {
 // in normalized form - there's an algebraic trick in relic to do the comparison
 // faster than normalizing first. If you're sure the points are normalized, it's
 // possible to compare directly with ==.
-func (p *G1) Eq(q *G1) bool {
+func (p *G1) Equal(q *G1) bool {
 	return C.ep_cmp(&p.st, &q.st) == C.CMP_EQ
 }
 
@@ -143,7 +143,7 @@ func (p *G1) Marshal() (res []byte) {
 
 // Marshal the point, as uncompressed XY.
 func (p *G1) MarshalUncompressed() (res []byte) {
-	var bin [G1CompressedSize+1]byte
+	var bin [G1UncompressedSize+1]byte
 	res = bin[1:]
 
 	if C.ep_is_infty(&p.st) == 1 {
