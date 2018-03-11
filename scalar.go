@@ -11,12 +11,12 @@ type Scalar struct {
 
 // Convert to scalar big.Int
 func (s *Scalar) FromInt(n *big.Int) *Scalar {
-	return s.ScalaromBytes(n.Bytes())
+	return s.FromBytes(n.Bytes())
 }
 
 // Convert to scalar raw bytes
-func (s *Scalar) FromBytes(s []byte) *Scalar {
-	C.bn_read_bin(&s.st, (*C.uint8_t)(&s[0]), C.int(len(s)))
+func (s *Scalar) FromBytes(buf []byte) *Scalar {
+	C.bn_read_bin(&s.st, (*C.uint8_t)(&buf[0]), C.int(len(buf)))
 	return s
 }
 

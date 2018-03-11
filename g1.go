@@ -28,13 +28,13 @@ func (p *G1) SetOne() *G1 {
 }
 
 // p = s * G1(p)
-func (p *G1) ScalarMult(s *Fr) *G1 {
+func (p *G1) ScalarMult(s *Scalar) *G1 {
 	C._ep_mul(&p.st, &p.st, &s.st)
 	return p
 }
 
 // p = s * G1(G)
-func (p *G1) ScalarBaseMult(s *Fr) *G1 {
+func (p *G1) ScalarBaseMult(s *Scalar) *G1 {
 	C.ep_mul_gen(&p.st, &s.st)
 	return p
 }
@@ -55,7 +55,7 @@ func (p *G1) Equal(q *G1) bool {
 
 const (
 	FqElementSize      = 48
-	G1CompressedSize   = FqElementSize
+	G1Size   = FqElementSize
 	G1UncompressedSize = 2 * FqElementSize
 
 	// https://github.com/ebfull/pairing/tree/master/src/bls12_381#serialization
@@ -66,16 +66,16 @@ const (
 )
 
 
-// Unmarshal a point on G1. It consumes either G1CompressedSize or
+// Unmarshal a point on G1. It consumes either G1Size or
 // G1UncompressedSize, depending on how the point was marshalled.
 func (p *G1) Unmarshal(in []byte) ([]byte, error) {
-	if len(in) < G1CompressedSize {
+	if len(in) < G1Size {
 		return nil, errors.New("wrong encoded point size")
 	}
 	compressed := in[0]&serializationCompressed != 0
 	inlen := G1UncompressedSize
 	if compressed {
-		inlen = G1CompressedSize
+		inlen = G1Size
 	}
 	if !compressed && len(in) < G1UncompressedSize {
 		return nil, errors.New("insufficient data to decode point")
@@ -104,7 +104,7 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 
 	if compressed {
 		bin[0] = 2
-		C.ep_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G1CompressedSize+1)
+		C.ep_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G1Size+1)
 
 		var yneg C.fp_st
 		C._fp_neg(&yneg[0], &p.st.y[0])
@@ -112,7 +112,7 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 		if (C.fp_cmp(&yneg[0], &p.st.y[0]) == C.CMP_GT) == (in[0]&serializationBigY != 0) {
 			p.st.y = yneg
 		}
-		return in[G1CompressedSize:], nil
+		return in[G1Size:], nil
 	}
 
 	bin[0] = 4
@@ -122,7 +122,7 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 
 // Marshal the point, compressed to X and sign.
 func (p *G1) Marshal() (res []byte) {
-	var bin [G1CompressedSize+1]byte
+	var bin [G1Size+1]byte
 	res = bin[1:]
 	res[0] |= serializationCompressed
 
@@ -131,7 +131,7 @@ func (p *G1) Marshal() (res []byte) {
 		return
 	}
 	C.ep_norm(&p.st, &p.st)
-	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1CompressedSize+1, &p.st, 1)
+	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1Size+1, &p.st, 1)
 
 	var yneg C.fp_st
 	C._fp_neg(&yneg[0], &p.st.y[0])

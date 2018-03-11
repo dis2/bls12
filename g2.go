@@ -37,7 +37,7 @@ func (p *G2) SetOne() *G2 {
 }
 
 // p = s * G2(p)
-func (p *G2) ScalarMult(s *Fr) *G2 {
+func (p *G2) ScalarMult(s *Scalar) *G2 {
 	C._ep2_mul(&p.st, &p.st, &s.st)
 	return p
 }
@@ -60,20 +60,20 @@ func (p *G2) IsZero() bool {
 
 const (
 	Fq2ElementSize     = 96
-	G2CompressedSize   = Fq2ElementSize
+	G2Size   = Fq2ElementSize
 	G2UncompressedSize = 2 * Fq2ElementSize
 )
 
-// Unmarshal a point on G2. It consumes either G2CompressedSize or
+// Unmarshal a point on G2. It consumes either G2Size or
 // G2UncompressedSize, depending on how the point was marshalled.
 func (p *G2) Unmarshal(in []byte) ([]byte, error) {
-	if len(in) < G2CompressedSize {
+	if len(in) < G2Size {
 		return nil, errors.New("wrong encoded point size")
 	}
 	compressed := in[0]&serializationCompressed != 0
 	inlen := G2UncompressedSize
 	if compressed {
-		inlen = G2CompressedSize
+		inlen = G2Size
 	}
 	if !compressed && len(in) < G2UncompressedSize {
 		return nil, errors.New("insufficient data to decode point")
@@ -104,7 +104,7 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 
 	if compressed {
 		bin[0] = 2
-		C.ep2_read_x(&p.st, (*C.uint8_t)(&bin[0]), G2CompressedSize+1)
+		C.ep2_read_x(&p.st, (*C.uint8_t)(&bin[0]), G2Size+1)
 		if C.ep2_upk(&p.st, &p.st) == 0 {
 			return nil, errors.New("no square root found")
 		}
@@ -117,7 +117,7 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 			// negate c0 too
 			C._fp_neg(&p.st.y[0][0], &p.st.y[0][0])
 		}
-		return in[G2CompressedSize:], nil
+		return in[G2Size:], nil
 	}
 
 	C.ep2_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G2UncompressedSize+1)
@@ -126,16 +126,16 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 
 // Marshal the point, compressed to X and sign.
 func (p *G2) Marshal() (res []byte) {
-	var bin [G2CompressedSize+1]byte
+	var bin [G2Size+1]byte
 	res = bin[1:]
 	if C.ep2_is_infty(&p.st) == 1 {
 		res[0] |= serializationInfinity | serializationCompressed
 		return
 	}
 	C.ep2_norm(&p.st, &p.st)
-	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2CompressedSize+1, &p.st, 1)
+	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2Size+1, &p.st, 1)
 
-	var bin2 [G2CompressedSize+1]byte
+	var bin2 [G2Size+1]byte
 	copy(bin2[1:], res[Fq2ElementSize/2:Fq2ElementSize])
 	copy(bin2[1+Fq2ElementSize/2:], res[:Fq2ElementSize/2])
 	res = bin2[1:]
@@ -159,7 +159,7 @@ func (p *G2) MarshalUncompressed() (res []byte) {
 		return
 	}
 	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2UncompressedSize+1, &p.st, 0)
-	var bin2 [G2CompressedSize+1]byte
+	var bin2 [G2Size+1]byte
 	copy(bin2[1:], res[Fq2ElementSize/2:Fq2ElementSize])
 	copy(bin2[1+Fq2ElementSize/2:], res[:Fq2ElementSize/2])
 	res = bin2[1:]
