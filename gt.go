@@ -6,10 +6,9 @@ package bls12
 // #include "relic_fpx.h"
 // void _fp12_mul(fp12_t c, fp12_t a, fp12_t b) { fp12_mul(c,a,b); }
 import "C"
-import "errors"
 
 const (
-	GTSize = 48
+	GTSize = 384
 )
 
 // Element of the q^12 extension field.
@@ -56,15 +55,16 @@ func (p *GT) Equal(q *GT) bool {
 // Marshal GT into a byte buffer.
 func (p *GT) Marshal() []byte {
 	var bin [GTSize]byte
-	C.fp12_write_bin((*C.uint8_t)(&bin[0]), G1Size, &p.st[0], 1)
+	C.fp12_write_bin((*C.uint8_t)(&bin[0]), GTSize, &p.st[0], 1)
 	return bin[:]
 }
+
 
 // Unmarshal GT from a byte buffer.
 func (p *GT) Unmarshal(in []byte) ([]byte) {
 	if len(in) < GTSize {
 		return nil
 	}
-	C.fp12_read_bin(&p.st[0], (*C.uint8_t)(&in[0]), G1Size)
+	C.fp12_read_bin(&p.st[0], (*C.uint8_t)(&in[0]), GTSize)
 	return in[GTSize:]
 }
