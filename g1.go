@@ -8,7 +8,7 @@ package bls12
 // void _ep_mul(ep_t r, const ep_t p, const bn_st *k) { ep_mul(r, p, k); }
 // void _fp_neg(fp_t r, const fp_t p);
 import "C"
-import "errors"
+import "fmt"
 
 // Point in G1 backed by a relic p.st.
 type G1 struct {
@@ -53,6 +53,16 @@ func (p *G1) Equal(q *G1) bool {
 	return C.ep_cmp(&p.st, &q.st) == C.CMP_EQ
 }
 
+// p == G1(inf)
+func (p *G1) IsZero() bool {
+	return C.ep_is_infty(&p.st) == 1
+}
+
+// HashToPoint the buffer.
+func (p *G1) HashToPoint(b []byte) {
+	C.ep_map(&p.st, (*C.uint8_t)(&b[0]), C.int(len(b)))
+}
+
 const (
 	G1Size             = 48
 	G1UncompressedSize = 2 * G1Size
@@ -66,9 +76,9 @@ const (
 
 // Unmarshal a point on G1. It consumes either G1Size or
 // G1UncompressedSize, depending on how the point was marshalled.
-func (p *G1) Unmarshal(in []byte) ([]byte, error) {
+func (p *G1) Unmarshal(in []byte) ([]byte) {
 	if len(in) < G1Size {
-		return nil, errors.New("wrong encoded point size")
+		return nil
 	}
 	compressed := in[0]&serializationCompressed != 0
 	inlen := G1UncompressedSize
@@ -76,7 +86,7 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 		inlen = G1Size
 	}
 	if !compressed && len(in) < G1UncompressedSize {
-		return nil, errors.New("insufficient data to decode point")
+		return nil
 	}
 	var bin [G1UncompressedSize + 1]byte
 	copy(bin[1:], in[:inlen])
@@ -84,19 +94,19 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 
 	// Big Y, but we're not compressed, or infinity is serialized
 	if (in[0]&serializationBigY != 0) && (!compressed || (in[0]&serializationInfinity != 0)) {
-		return nil, errors.New("high Y bit improperly set")
+		return nil
 	}
 
 	if in[0]&serializationInfinity != 0 {
 		// Check that rest is zero
 		for _, v := range bin[1 : inlen+1] {
 			if v != 0 {
-				return nil, errors.New("invalid infinity encoding")
+				return nil
 			}
 		}
 
 		C.ep_set_infty(&p.st)
-		return in[inlen:], nil
+		return in[inlen:]
 	}
 
 	if compressed {
@@ -107,12 +117,12 @@ func (p *G1) Unmarshal(in []byte) ([]byte, error) {
 		if negativeIsBigger(&yneg[0], &p.st.y[0]) != (in[0]&serializationBigY != 0) {
 			p.st.y = yneg
 		}
-		return in[G1Size:], nil
+		return in[G1Size:]
 	}
 
 	bin[0] = 4
 	C.ep_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G1UncompressedSize+1)
-	return in[G1UncompressedSize:], nil
+	return in[G1UncompressedSize:]
 }
 
 // Marshal the point, compressed to X and sign.
@@ -133,6 +143,10 @@ func (p *G1) Marshal() (res []byte) {
 		res[0] |= serializationBigY
 	}
 	return
+}
+
+func (p *G1) String() string {
+	return fmt.Sprintf("bls12.G1(%x)", p.Marshal())
 }
 
 // Marshal the point, as uncompressed XY.

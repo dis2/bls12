@@ -24,9 +24,9 @@ func TestVectorG1Compressed(t *testing.T) {
 	)
 	for i := 0; i < 1000; i++ {
 		t.Logf("%d <- %x", i, d[:G1Size])
-		_, err := a.Unmarshal(d[:G1Size])
-		if err != nil {
-			t.Errorf("%d: failed decoding: %v", i, err)
+		ok := a.Unmarshal(d[:G1Size])
+		if ok == nil {
+			t.Errorf("%d: failed decoding")
 		}
 		if !ep.Equal(a) {
 			t.Errorf("%d: different point", i)
@@ -53,9 +53,9 @@ func TestVectorG1Uncompressed(t *testing.T) {
 	)
 	for i := 0; i < 1000; i++ {
 		t.Logf("%d <- %x", i, d[:G1UncompressedSize])
-		_, err := a.Unmarshal(d[:G1UncompressedSize])
-		if err != nil {
-			t.Errorf("%d: failed decoding: %v", i, err)
+		ok := a.Unmarshal(d[:G1UncompressedSize])
+		if ok == nil {
+			t.Errorf("%d: failed decoding")
 		}
 		if !ep.Equal(a) {
 			t.Errorf("%d: different point", i)

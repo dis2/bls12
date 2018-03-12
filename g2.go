@@ -18,7 +18,7 @@ package bls12
 //     fp2_zero(a->y);
 // }
 import "C"
-import "errors"
+import "fmt"
 
 type G2 struct {
 	st C.ep2_st
@@ -42,6 +42,12 @@ func (p *G2) ScalarMult(s *Scalar) *G2 {
 	return p
 }
 
+// p = s * G2(G)
+func (p *G2) ScalarBaseMult(s *Scalar) *G2 {
+	C._ep2_mul(&p.st, &(new(G2).SetOne().st), &s.st)
+	return p
+}
+
 // p = p + q
 func (p *G2) Add(q *G2) *G2 {
 	C._ep2_add(&p.st, &p.st, &q.st)
@@ -58,6 +64,11 @@ func (p *G2) IsZero() bool {
 	return C.ep2_is_infty(&p.st) == 1
 }
 
+// HashToPoint the buffer.
+func (p *G2) HashToPoint(b []byte) {
+	C.ep2_map(&p.st, (*C.uint8_t)(&b[0]), C.int(len(b)))
+}
+
 const (
 	G2Size             = 96
 	G2UncompressedSize = 2 * G2Size
@@ -65,9 +76,9 @@ const (
 
 // Unmarshal a point on G2. It consumes either G2Size or
 // G2UncompressedSize, depending on how the point was marshalled.
-func (p *G2) Unmarshal(in []byte) ([]byte, error) {
+func (p *G2) Unmarshal(in []byte) ([]byte) {
 	if len(in) < G2Size {
-		return nil, errors.New("wrong encoded point size")
+		return nil
 	}
 	compressed := in[0]&serializationCompressed != 0
 	inlen := G2UncompressedSize
@@ -75,25 +86,25 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 		inlen = G2Size
 	}
 	if !compressed && len(in) < G2UncompressedSize {
-		return nil, errors.New("insufficient data to decode point")
+		return nil
 	}
 	var bin [G2UncompressedSize + 1]byte
 
 	// Big Y set, but we're not compressed, or infinity is serialized
 	if (in[0]&serializationBigY != 0) && (!compressed || (in[0]&serializationInfinity != 0)) {
-		return nil, errors.New("high Y bit improperly set")
+		return nil
 	}
 
 	if in[0]&serializationInfinity != 0 {
 		// Check that rest is zero
 		for _, v := range bin[1 : inlen+1] {
 			if v != 0 {
-				return nil, errors.New("invalid infinity encoding")
+				return nil
 			}
 		}
 
 		C.ep2_set_infty(&p.st)
-		return in[inlen:], nil
+		return in[inlen:]
 	}
 
 	// swap c0 and c1
@@ -105,7 +116,7 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 	if compressed {
 		C.ep2_read_x(&p.st, (*C.uint8_t)(&bin[1]), G2Size)
 		if C.ep2_upk(&p.st, &p.st) == 0 {
-			return nil, errors.New("no square root found")
+			return nil
 		}
 
 		var yneg C.fp_st
@@ -115,12 +126,12 @@ func (p *G2) Unmarshal(in []byte) ([]byte, error) {
 			C._fp_neg(&p.st.y[0][0], &p.st.y[0][0])
 		}
 
-		return in[G2Size:], nil
+		return in[G2Size:]
 	}
 	copy(bin[1+G2Size:], in[G2Size+G2Size/2:])
 	copy(bin[1+G2Size+G2Size/2:], in[G2Size:])
 	C.ep2_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G2UncompressedSize+1)
-	return in[G2UncompressedSize:], nil
+	return in[G2UncompressedSize:]
 }
 
 // Marshal the point, compressed to X and sign.
@@ -144,6 +155,10 @@ func (p *G2) Marshal() (res []byte) {
 		res[0] |= serializationBigY
 	}
 	return
+}
+
+func (p *G2) String() string {
+	return fmt.Sprintf("bls12.G2(%x)", p.Marshal())
 }
 
 // Marshal the point, as uncompressed XY.
