@@ -3,8 +3,8 @@ Bilinear pairing BLS12-381.
 ## RTFM
 
 * https://github.com/ebfull/pairing/tree/master/src/bls12_381#bls12-381 for specification.
-* https://github.com/dis2/bls12 for API documentation.
-* https://github.com/dis2/blsig for example applicatoin.
+* https://godoc.org/github.com/dis2/bls12 for API documentation.
+* https://godoc.org/github.com/dis2/blsig for example applicatoin.
 
 ## Performance
 
