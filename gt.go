@@ -13,17 +13,16 @@ const (
 )
 
 // Element of the q^12 extension field.
-// Can be thought of as a "point" in a pseudo-group GT resulting from pairing
+// Can be thought of as a pseudo-point in a group GT resulting from pairing
 // operations.
 //
-// CAVEAT: The operators of the group are shifted from the field.
-// Addition in group is multiplication in the field. Scalar multiplication in
-// group, is exponentiation in the field. Negation is inverse, and so on...
+// The group law is shifted from the underlying Fq12 field. Ie multiplication
+// is field exponentation etc.
 type GT struct {
 	st [2]C.fp6_t // Workaround for Go type resolution bugs.
 }
 
-// Pair two points using optimal Tate pairing, q = e(p1,p2)
+// Find optimal ate pairing for p1 and p2, q = e(p1,p2)
 func (q *GT) Pair(p1 *G1, p2 *G2) *GT {
 	C.pp_map_oatep_k12(&q.st[0], &p1.st, &p2.st)
 	return q
@@ -49,6 +48,7 @@ func (p *GT) Neg() (q *GT) {
 	return
 }
 
+// p == q
 func (p *GT) Equal(q *GT) bool {
 	return C.fp12_cmp(&p.st[0], &q.st[0]) == C.CMP_EQ
 }
@@ -61,10 +61,10 @@ func (p *GT) Marshal() []byte {
 }
 
 // Unmarshal GT from a byte buffer.
-func (p *GT) Unmarshal(in []byte) ([]byte, error) {
+func (p *GT) Unmarshal(in []byte) ([]byte) {
 	if len(in) < GTSize {
-		return nil, errors.New("wrong encoded GT size")
+		return nil
 	}
 	C.fp12_read_bin(&p.st[0], (*C.uint8_t)(&in[0]), G1Size)
-	return in[GTSize:], nil
+	return in[GTSize:]
 }

@@ -18,7 +18,7 @@ func BenchmarkBaseMultG1(b *testing.B) {
 func BenchmarkMultG1(b *testing.B) {
 	x, _ := rand.Int(rand.Reader, Order)
 	s := new(Scalar).FromInt(x)
-	g1 := new(G2).HashToPoint([]byte("xxx"))
+	g1 := new(G2).HashToPoint([]byte("yxxx"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		g1.ScalarMult(s)
