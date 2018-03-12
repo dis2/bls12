@@ -59,8 +59,9 @@ func (p *G1) IsZero() bool {
 }
 
 // HashToPoint the buffer.
-func (p *G1) HashToPoint(b []byte) {
+func (p *G1) HashToPoint(b []byte) *G1 {
 	C.ep_map(&p.st, (*C.uint8_t)(&b[0]), C.int(len(b)))
+	return p
 }
 
 const (
@@ -76,7 +77,7 @@ const (
 
 // Unmarshal a point on G1. It consumes either G1Size or
 // G1UncompressedSize, depending on how the point was marshalled.
-func (p *G1) Unmarshal(in []byte) ([]byte) {
+func (p *G1) Unmarshal(in []byte) []byte {
 	if len(in) < G1Size {
 		return nil
 	}

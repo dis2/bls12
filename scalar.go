@@ -34,7 +34,7 @@ func (s *Scalar) String() string {
 }
 
 // Unmarshal scalar from a byte buffer.
-func (s *Scalar) Unmarshal(buf []byte) ([]byte) {
+func (s *Scalar) Unmarshal(buf []byte) []byte {
 	nb := len(buf)
 	if nb > ScalarSize {
 		nb = ScalarSize

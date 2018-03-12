@@ -1,4 +1,5 @@
-package bls12
+// Package bls12 implements bilinear pairing curve BLS12-381
+package bls12 // import "github.com/dis2/bls12"
 
 // #include "relic_core.h"
 // #include "relic_ep.h"

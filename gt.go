@@ -1,5 +1,6 @@
 package bls12
 
+// #include "relic_core.h"
 // #include "relic_pp.h"
 // #include "relic_ep.h"
 // #include "relic_fpx.h"
@@ -28,10 +29,10 @@ func (q *GT) Pair(p1 *G1, p2 *G2) *GT {
 	return q
 }
 
-// c = a + b
-func (c *GT) Add(a, b *GT) *GT {
-	C._fp12_mul(&c.st[0], &a.st[0], &b.st[0])
-	return c
+// p = p + q
+func (p *GT) Add(q *GT) *GT {
+	C._fp12_mul(&p.st[0], &p.st[0], &q.st[0])
+	return p
 }
 
 // q = s * GT(p)
@@ -46,6 +47,10 @@ func (p *GT) Neg() (q *GT) {
 	q = &GT{}
 	C.fp12_inv(&q.st[0], &p.st[0])
 	return
+}
+
+func (p *GT) Equal(q *GT) bool {
+	return C.fp12_cmp(&p.st[0], &q.st[0]) == C.CMP_EQ
 }
 
 // Marshal GT into a byte buffer.

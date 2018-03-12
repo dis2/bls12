@@ -13,7 +13,7 @@ var (
 	// X = -((2**63) + (2**62) + (2**60) + (2**57) + (2**48) + (2**16))
 	X = hex("-0xd201000000010000")
 	// R = (X**4) - (X**2) + 1 is the ~256 bit base prime field, this is the order of G1 and G2
-	R = hex("73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001")
+	R     = hex("73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001")
 	Order = R
 	// Q = (((X - 1) ** 2) * ((X**4) - (X**2) + 1) // 3) + X is the ~384bit extended prime field
 	Q = hex("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab")
