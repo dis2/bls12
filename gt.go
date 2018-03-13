@@ -23,7 +23,7 @@ type GT struct {
 
 // Find optimal ate pairing for p1 and p2, q = e(p1,p2)
 func (q *GT) Pair(p1 *G1, p2 *G2) *GT {
-	C.pp_map_oatep_k12(&q.st[0], &p1.st, &p2.st)
+	C.pp_map_oatep_k12(&q.st[0], p1, p2)
 	return q
 }
 
@@ -36,7 +36,7 @@ func (p *GT) Add(q *GT) *GT {
 // q = s * GT(p)
 func (p *GT) ScalarMult(s *Scalar) (q *GT) {
 	q = &GT{}
-	C.fp12_exp(&q.st[0], &p.st[0], &s.st)
+	C.fp12_exp(&q.st[0], &p.st[0], s)
 	return
 }
 

@@ -54,7 +54,7 @@ func TestHashToPoint(t *testing.T) {
 	// Manually via custom hash
 	buf := sha512.Sum384([]byte("test2"))
 	x := new(big.Int).SetBytes(buf[:])
-	p2 := new(G1).HashIntToPoint(x)
+	p2 := new(G1).MapIntToPoint(new(Fq).FromInt(x))
 	if !p1.Equal(p2) {
 		t.Fatal("misbehaving hashtopoint")
 	}

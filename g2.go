@@ -20,53 +20,55 @@ package bls12
 import "C"
 import "fmt"
 
-type G2 struct {
-	st C.ep2_st
-}
+type G2 = C.ep2_st
 
 // p = G2(inf)
 func (p *G2) SetZero() *G2 {
-	C.ep2_set_infty(&p.st)
+	C.ep2_set_infty(p)
 	return p
 }
 
 // p = G2(G)
 func (p *G2) SetOne() *G2 {
-	C.ep2_curve_get_gen(&p.st)
+	C.ep2_curve_get_gen(p)
 	return p
+}
+
+// p = G_h * G(p)
+func (p *G2) ScaleByCofactor() {
 }
 
 // p = s * G2(p)
 func (p *G2) ScalarMult(s *Scalar) *G2 {
-	C._ep2_mul(&p.st, &p.st, &s.st)
+	C._ep2_mul(p, p, s)
 	return p
 }
 
 // p = s * G2(G)
 func (p *G2) ScalarBaseMult(s *Scalar) *G2 {
-	C._ep2_mul(&p.st, &(new(G2).SetOne().st), &s.st)
+	C._ep2_mul(p, new(G2).SetOne(), s)
 	return p
 }
 
 // p = p + q
 func (p *G2) Add(q *G2) *G2 {
-	C._ep2_add(&p.st, &p.st, &q.st)
+	C._ep2_add(p, p, q)
 	return p
 }
 
 // p == q
 func (p *G2) Equal(q *G2) bool {
-	return C.ep2_cmp(&p.st, &q.st) == C.CMP_EQ
+	return C.ep2_cmp(p, q) == C.CMP_EQ
 }
 
 // p == G2(inf)
 func (p *G2) IsZero() bool {
-	return C.ep2_is_infty(&p.st) == 1
+	return C.ep2_is_infty(p) == 1
 }
 
 // HashToPoint the buffer.
 func (p *G2) HashToPoint(b []byte) *G2 {
-	C.ep2_map(&p.st, (*C.uint8_t)(&b[0]), C.int(len(b)))
+	C.ep2_map(p, (*C.uint8_t)(&b[0]), C.int(len(b)))
 	return p
 }
 
@@ -104,7 +106,7 @@ func (p *G2) Unmarshal(in []byte) []byte {
 			}
 		}
 
-		C.ep2_set_infty(&p.st)
+		C.ep2_set_infty(p)
 		return in[inlen:]
 	}
 
@@ -115,23 +117,23 @@ func (p *G2) Unmarshal(in []byte) []byte {
 	bin[1+G2Size/2] &= serializationMask
 
 	if compressed {
-		C.ep2_read_x(&p.st, (*C.uint8_t)(&bin[1]), G2Size)
-		if C.ep2_upk(&p.st, &p.st) == 0 {
+		C.ep2_read_x(p, (*C.uint8_t)(&bin[1]), G2Size)
+		if C.ep2_upk(p, p) == 0 {
 			return nil
 		}
 
 		var yneg C.fp_st
-		if negativeIsBigger(&yneg[0], &p.st.y[1][0]) != (in[0]&serializationBigY != 0) {
-			p.st.y[1] = yneg
+		if negativeIsBigger(&yneg[0], &p.y[1][0]) != (in[0]&serializationBigY != 0) {
+			p.y[1] = yneg
 			// negate c0 too
-			C._fp_neg(&p.st.y[0][0], &p.st.y[0][0])
+			C._fp_neg(&p.y[0][0], &p.y[0][0])
 		}
 
 		return in[G2Size:]
 	}
 	copy(bin[1+G2Size:], in[G2Size+G2Size/2:])
 	copy(bin[1+G2Size+G2Size/2:], in[G2Size:])
-	C.ep2_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G2UncompressedSize+1)
+	C.ep2_read_bin(p, (*C.uint8_t)(&bin[0]), G2UncompressedSize+1)
 	return in[G2UncompressedSize:]
 }
 
@@ -139,12 +141,12 @@ func (p *G2) Unmarshal(in []byte) []byte {
 func (p *G2) Marshal() (res []byte) {
 	var bin [G2Size + 1]byte
 	res = bin[1:]
-	if C.ep2_is_infty(&p.st) == 1 {
+	if C.ep2_is_infty(p) == 1 {
 		res[0] |= serializationInfinity | serializationCompressed
 		return
 	}
-	C.ep2_norm(&p.st, &p.st)
-	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2Size+1, &p.st, 1)
+	C.ep2_norm(p, p)
+	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2Size+1, p, 1)
 
 	var bin2 [G2Size + 1]byte
 	copy(bin2[1:], res[G2Size/2:G2Size])
@@ -152,7 +154,7 @@ func (p *G2) Marshal() (res []byte) {
 	res = bin2[1:]
 	res[0] |= serializationCompressed
 	var yneg C.fp_st
-	if negativeIsBigger(&yneg[0], &p.st.y[1][0]) {
+	if negativeIsBigger(&yneg[0], &p.y[1][0]) {
 		res[0] |= serializationBigY
 	}
 	return
@@ -167,11 +169,11 @@ func (p *G2) MarshalUncompressed() (res []byte) {
 	var bin [G2UncompressedSize + 1]byte
 	res = bin[1:]
 
-	if C.ep2_is_infty(&p.st) == 1 {
+	if C.ep2_is_infty(p) == 1 {
 		res[0] |= serializationInfinity
 		return
 	}
-	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2UncompressedSize+1, &p.st, 0)
+	C.ep2_write_bin((*C.uint8_t)(&bin[0]), G2UncompressedSize+1, p, 0)
 	var bin2 [G2UncompressedSize + 1]byte
 	copy(bin2[1:], res[G2Size/2:G2Size])
 	copy(bin2[1+G2Size/2:], res[:G2Size/2])

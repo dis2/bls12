@@ -7,93 +7,89 @@ package bls12
 // void _ep_neg(ep_t r, const ep_t p) { ep_neg(r, p); }
 // void _ep_mul(ep_t r, const ep_t p, const bn_st *k) { ep_mul(r, p, k); }
 // void _fp_neg(fp_t r, const fp_t p);
+// void ep_mul_cof_b12(ep_t r, ep_t p);
 import "C"
 import "fmt"
-import "math/big"
 
 // Point on G1, y^2 = x^3 + 4
-type G1 struct {
-	st C.ep_st
-}
+type G1 = C.ep_st
 
-// Compute valid points on the curve (but unknown subgroup)
-func hashToCurvePoint(x *big.Int) (*big.Int, *big.Int) {
-	x.Mod(x, Q)
-
-	four := big.NewInt(4)
-	one := big.NewInt(1)
+// Computes x,y for nearest point in Fq, given the x.
+// We land in unknown subgroup, caller is responsible for scaling by cofactor.
+func g1MapXtoY(in *Fq) (x, y Fq) {
+	x = *in
 	for {
-		xxx := new(big.Int).Mul(x, x)
-		xxx.Mul(xxx, x)
-		t := new(big.Int).Add(xxx, four)
-		y := new(big.Int).ModSqrt(t, Q)
-		if y != nil {
-			return x, y
+		var y2, ytest Fq
+		// y2 = y^2 = x^3 + 4
+		y2.Square(&x)
+		y2.Mul(&y2,&x)
+		y2.AddInt64(&y2, 4)
+
+		// y = y2 ^ ((q+1)/4)
+		y.Exp(&y2, &QPlus1Quarter)
+
+		// if y^2 == y2
+		if y2.Equal(ytest.Square(&y)) {
+			return
 		}
 
-		x.Add(x, one)
+		x.AddInt64(&x,1)
 	}
 }
 
-func pad(buf []byte, to int) []byte {
-	n := len(buf)
-	if n > to {
-		return buf
-	}
-	return append(make([]byte, to-n), buf...)
-}
-
-// Set raw affine coordinates X,Y
-func (p *G1) SetXY(x, y *big.Int) *G1 {
-	C.fp_read_bin(&p.st.x[0], (*C.uint8_t)(&pad(x.Bytes(),G1Size)[0]), G1Size)
-	C.fp_read_bin(&p.st.y[0], (*C.uint8_t)(&pad(y.Bytes(),G1Size)[0]), G1Size)
+// Set affine coordinates X,Y with implicit Z=1
+func (p *G1) SetXY(x, y *Fq) *G1 {
+	p.x = *x
+	p.y = *y
 
 	// Implicitly normalized
-	C.fp_set_dig(&p.st.z[0], 1)
-	p.st.norm = 1
+	p.z.SetInt64(1)
+	p.norm = 1
 	return p
 }
 
-// Get raw affine coordinates
-func (p *G1) GetXY() (x,y *big.Int) {
-	var t C.ep_st
-	C.ep_norm(&t, &p.st)
-	var bx, by [G1Size]byte
-	C.fp_write_bin((*C.uint8_t)(&bx[0]), G1Size, &t.x[0]);
-	C.fp_write_bin((*C.uint8_t)(&by[0]), G1Size, &t.y[0]);
-	x = new(big.Int).SetBytes(bx[:])
-	y = new(big.Int).SetBytes(by[:])
-	return
+// Get pointers to raw coordinates of the element.
+func (p *G1) GetXYZ() (x,y,z *Fq) {
+	return &p.x, &p.y, &p.z
 }
 
+// Normalize XY to Z=1
+func (p *G1) Normalize() {
+	C.ep_norm(p, p)
+}
+
+// p = G1_h * G1(p)
+func (p *G1) ScaleByCofactor() {
+	p.ScalarMult(&G1_h)
+}
 
 // p = G1(inf)
 func (p *G1) SetZero() *G1 {
-	C.ep_set_infty(&p.st)
+	C.ep_set_infty(p)
 	return p
 }
 
 // p = G1(G)
 func (p *G1) SetOne() *G1 {
-	C.ep_curve_get_gen(&p.st)
+	C.ep_curve_get_gen(p)
 	return p
 }
 
 // p = s * G1(p)
 func (p *G1) ScalarMult(s *Scalar) *G1 {
-	C._ep_mul(&p.st, &p.st, &s.st)
+	C._ep_mul(p, p, s)
 	return p
 }
 
 // p = s * G1(G)
 func (p *G1) ScalarBaseMult(s *Scalar) *G1 {
-	C.ep_mul_gen(&p.st, &s.st)
+	C.ep_mul_gen(p, s)
 	return p
 }
 
 // p = p + q
 func (p *G1) Add(q *G1) *G1 {
-	C._ep_add(&p.st, &p.st, &q.st)
+	C._ep_add(p, p, q)
 	return p
 }
 
@@ -102,25 +98,30 @@ func (p *G1) Add(q *G1) *G1 {
 // faster than normalizing first. If you're sure the points are normalized, it's
 // possible to compare directly with ==.
 func (p *G1) Equal(q *G1) bool {
-	return C.ep_cmp(&p.st, &q.st) == C.CMP_EQ
+	return C.ep_cmp(p, q) == C.CMP_EQ
 }
 
 // p == G1(inf)
 func (p *G1) IsZero() bool {
-	return C.ep_is_infty(&p.st) == 1
+	return C.ep_is_infty(p) == 1
 }
 
-// HashToPoint the buffer.
-func (p *G1) HashToPoint(b []byte) *G1 {
-	C.ep_map(&p.st, (*C.uint8_t)(&b[0]), C.int(len(b)))
+// HashToPoint the buffer, using whatever relic does.
+func (p *G1) HashToPointRelic(b []byte) *G1 {
+	C.ep_map(p, (*C.uint8_t)(&b[0]), C.int(len(b)))
 	return p
 }
 
-// Hash arbitrary integer to a point, use with a custom hash function.
-func (p *G1) HashIntToPoint(x *big.Int) *G1 {
-	x, y := hashToCurvePoint(x)
-	p.SetXY(x,y)
-	p.ScalarMult(new(Scalar).FromInt(G1_h))
+func (p *G1) HashToPoint(b []byte) *G1 {
+	C.ep_map(p, (*C.uint8_t)(&b[0]), C.int(len(b)))
+	return p
+}
+
+// Map arbitrary integer to a point, for use with custom hash function.
+func (p *G1) MapIntToPoint(in *Fq) *G1 {
+	x, y := g1MapXtoY(in)
+	p.SetXY(&x,&y)
+	p.ScaleByCofactor()
 	return p
 }
 
@@ -166,23 +167,23 @@ func (p *G1) Unmarshal(in []byte) []byte {
 			}
 		}
 
-		C.ep_set_infty(&p.st)
+		C.ep_set_infty(p)
 		return in[inlen:]
 	}
 
 	if compressed {
 		bin[0] = 2
-		C.ep_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G1Size+1)
+		C.ep_read_bin(p, (*C.uint8_t)(&bin[0]), G1Size+1)
 		var yneg C.fp_st
 
-		if negativeIsBigger(&yneg[0], &p.st.y[0]) != (in[0]&serializationBigY != 0) {
-			p.st.y = yneg
+		if negativeIsBigger(&yneg[0], &p.y[0]) != (in[0]&serializationBigY != 0) {
+			p.y = yneg
 		}
 		return in[G1Size:]
 	}
 
 	bin[0] = 4
-	C.ep_read_bin(&p.st, (*C.uint8_t)(&bin[0]), G1UncompressedSize+1)
+	C.ep_read_bin(p, (*C.uint8_t)(&bin[0]), G1UncompressedSize+1)
 	return in[G1UncompressedSize:]
 }
 
@@ -191,24 +192,24 @@ func (p *G1) Marshal() (res []byte) {
 	var bin [G1Size + 1]byte
 	res = bin[1:]
 
-	if C.ep_is_infty(&p.st) == 1 {
+	if C.ep_is_infty(p) == 1 {
 		res[0] = serializationInfinity | serializationCompressed
 		return
 	}
-	C.ep_norm(&p.st, &p.st)
-	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1Size+1, &p.st, 1)
+	C.ep_norm(p, p)
+	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1Size+1, p, 1)
 	res[0] |= serializationCompressed
 
 	var yneg C.fp_st
-	if negativeIsBigger(&yneg[0], &p.st.y[0]) {
+	if negativeIsBigger(&yneg[0], &p.y[0]) {
 		res[0] |= serializationBigY
 	}
 	return
 }
 
 func (p *G1) String() string {
-	x,y := p.GetXY()
-	return fmt.Sprintf("bls12.G1(%d,%d)", x,y)
+	x,y,_ := p.GetXYZ()
+	return fmt.Sprintf("bls12.G1(%d,%d)", x.ToInt(),y.ToInt())
 }
 
 // Marshal the point, as uncompressed XY.
@@ -216,10 +217,10 @@ func (p *G1) MarshalUncompressed() (res []byte) {
 	var bin [G1UncompressedSize + 1]byte
 	res = bin[1:]
 
-	if C.ep_is_infty(&p.st) == 1 {
+	if C.ep_is_infty(p) == 1 {
 		res[0] |= serializationInfinity
 		return
 	}
-	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1UncompressedSize+1, &p.st, 0)
+	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1UncompressedSize+1, p, 0)
 	return
 }
