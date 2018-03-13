@@ -619,11 +619,11 @@
 /** BLAKE2s-256 hash function. */
 #define B2S256         7
 /** Chosen hash function. */
-#define MD_MAP   SH256
+#define MD_MAP   SH384
 //#define MD_MAP   SH256
 
 /** Choice of hash function. */
-#define MD_METHD "SH256"
+#define MD_METHD "SH384"
 
 /** RSA without padding. */
 #define BASIC    1

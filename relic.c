@@ -170,13 +170,17 @@
 #include "md/relic_md_mgf.c"
 #include "md/relic_md_sha1.c"
 #include "md/relic_md_sha224.c"
-#include "md/relic_md_sha384.c"
 #include "md/relic_md_sha512.c"
 #include "md/sha1.c"
-#include "md/sha384-512.c"
 #endif
+#if 0
 #include "md/sha224-256.c"
 #include "md/relic_md_sha256.c"
+#else
+// Needed for full 384bit input to BLS12
+#include "md/relic_md_sha384.c"
+#include "md/sha384-512.c"
+#endif
 
 #include "pc/relic_pc_util.c"
 #include "pp/relic_pp_add.c"

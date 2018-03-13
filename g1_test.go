@@ -4,14 +4,31 @@ import (
 	"bytes"
 	"io/ioutil"
 	"testing"
+	"math/big"
+	"crypto/sha512"
 )
 
 func TestSetZero(t *testing.T) {
 	new(G1).SetZero()
 }
+
 func TestSetOne(t *testing.T) {
 	new(G1).SetOne()
 }
+
+func TestHashToPoint(t *testing.T) {
+	// Via relic (hardcoded sha384)
+	p1 := new(G1).HashToPoint([]byte("test2"))
+
+	// Manually via custom hash
+	buf := sha512.Sum384([]byte("test2"))
+	x := new(big.Int).SetBytes(buf[:])
+	p2 := new(G1).HashIntToPoint(x)
+	if !p1.Equal(p2) {
+		t.Fatal("misbehaving hashtopoint")
+	}
+}
+
 
 func TestVectorG1Compressed(t *testing.T) {
 	//	t.Run("Compressed", func(t *testing.T) {

@@ -9,11 +9,63 @@ package bls12
 // void _fp_neg(fp_t r, const fp_t p);
 import "C"
 import "fmt"
+import "math/big"
 
-// Point in G1 backed by a relic p.st.
+// Point on G1, y^2 = x^3 + 4
 type G1 struct {
 	st C.ep_st
 }
+
+// Compute valid points on the curve (but unknown subgroup)
+func hashToCurvePoint(x *big.Int) (*big.Int, *big.Int) {
+	x.Mod(x, Q)
+
+	four := big.NewInt(4)
+	one := big.NewInt(1)
+	for {
+		xxx := new(big.Int).Mul(x, x)
+		xxx.Mul(xxx, x)
+		t := new(big.Int).Add(xxx, four)
+		y := new(big.Int).ModSqrt(t, Q)
+		if y != nil {
+			return x, y
+		}
+
+		x.Add(x, one)
+	}
+}
+
+func pad(buf []byte, to int) []byte {
+	n := len(buf)
+	if n > to {
+		return buf
+	}
+	return append(make([]byte, to-n), buf...)
+}
+
+// Set raw affine coordinates X,Y
+func (p *G1) SetXY(x, y *big.Int) *G1 {
+	C.fp_read_bin(&p.st.x[0], (*C.uint8_t)(&pad(x.Bytes(),G1Size)[0]), G1Size)
+	C.fp_read_bin(&p.st.y[0], (*C.uint8_t)(&pad(y.Bytes(),G1Size)[0]), G1Size)
+
+	// Implicitly normalized
+	C.fp_set_dig(&p.st.z[0], 1)
+	p.st.norm = 1
+	return p
+}
+
+// Get raw affine coordinates
+func (p *G1) GetXY() (x,y *big.Int) {
+	var t C.ep_st
+	C.ep_norm(&t, &p.st)
+	var bx, by [G1Size]byte
+	C.fp_write_bin((*C.uint8_t)(&bx[0]), G1Size, &t.x[0]);
+	C.fp_write_bin((*C.uint8_t)(&by[0]), G1Size, &t.y[0]);
+	x = new(big.Int).SetBytes(bx[:])
+	y = new(big.Int).SetBytes(by[:])
+	return
+}
+
 
 // p = G1(inf)
 func (p *G1) SetZero() *G1 {
@@ -61,6 +113,14 @@ func (p *G1) IsZero() bool {
 // HashToPoint the buffer.
 func (p *G1) HashToPoint(b []byte) *G1 {
 	C.ep_map(&p.st, (*C.uint8_t)(&b[0]), C.int(len(b)))
+	return p
+}
+
+// Hash arbitrary integer to a point, use with a custom hash function.
+func (p *G1) HashIntToPoint(x *big.Int) *G1 {
+	x, y := hashToCurvePoint(x)
+	p.SetXY(x,y)
+	p.ScalarMult(new(Scalar).FromInt(G1_h))
 	return p
 }
 
@@ -147,7 +207,8 @@ func (p *G1) Marshal() (res []byte) {
 }
 
 func (p *G1) String() string {
-	return fmt.Sprintf("bls12.G1(%x)", p.Marshal())
+	x,y := p.GetXY()
+	return fmt.Sprintf("bls12.G1(%d,%d)", x,y)
 }
 
 // Marshal the point, as uncompressed XY.
