@@ -6,7 +6,38 @@ import (
 	"testing"
 	"math/big"
 	"crypto/sha512"
+	"crypto/rand"
 )
+
+func BenchmarkUncompressG1(b *testing.B) {
+	p1 := new(G1).HashToPoint([]byte("test2"))
+	b.ResetTimer()
+	m := p1.Marshal()
+	for i := 0; i < b.N; i++ {
+		p1.Unmarshal(m)
+	}
+}
+
+func BenchmarkBaseMultG1(b *testing.B) {
+	x, _ := rand.Int(rand.Reader, Order)
+	s := new(Scalar).FromInt(x)
+	g1 := G1{}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g1.ScalarBaseMult(s)
+	}
+}
+
+func BenchmarkMultG1(b *testing.B) {
+	x, _ := rand.Int(rand.Reader, Order)
+	s := new(Scalar).FromInt(x)
+	g1 := new(G2).HashToPoint([]byte("yxxx"))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g1.ScalarMult(s)
+	}
+}
+
 
 func TestSetZero(t *testing.T) {
 	new(G1).SetZero()

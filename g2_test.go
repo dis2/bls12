@@ -3,7 +3,28 @@ package bls12
 import (
 	"bytes"
 	"testing"
+	"crypto/rand"
 )
+
+func BenchmarkUncompressG2(b *testing.B) {
+	p2 := new(G2).HashToPoint([]byte("test2"))
+	b.ResetTimer()
+	m := p2.Marshal()
+	for i := 0; i < b.N; i++ {
+		p2.Unmarshal(m)
+	}
+}
+
+func BenchmarkMultG2(b *testing.B) {
+	x, _ := rand.Int(rand.Reader, Order)
+	s := new(Scalar).FromInt(x)
+	g1 := new(G2).HashToPoint([]byte("xxx"))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g1.ScalarMult(s)
+	}
+}
+
 
 func TestVectorG2Compressed(t *testing.T) {
 	var (
