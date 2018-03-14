@@ -9,6 +9,9 @@ package bls12
 // cofactor, and add them together for final point.
 func fouqueHalfPoint(t *Fq) (x, y Fq) {
 	var w, y2, ytest Fq
+	// If t is less than half q, its negative will be lexicographically
+	// larger
+
 	// w = (t^2 + 4 + 1)^(-1) * sqrt(-3) * t
 	//if t.IsZero() { panic("degenerate t=0") }
 	w = *t
@@ -18,6 +21,7 @@ func fouqueHalfPoint(t *Fq) (x, y Fq) {
 	w.Inverse(&w)
 	w.Mul(&w, &QSqrtMinus3)
 	w.Mul(&w, t)
+
 	for i := 0; i < 3; i++ {
 		switch i {
 		// x = (sqrt(-3) - 1) / 2 - (w * t)
@@ -38,10 +42,8 @@ func fouqueHalfPoint(t *Fq) (x, y Fq) {
 		y.Exp(&y2, &QPlus1Quarter)
 		// if y^2 == y2
 		if y2.Equal(ytest.Square(&y)) {
-			var residue Fq
-			residue.Exp(t, &QMinus1Half)
-			//if residue.IsZero() { panic("degenerate residue") }
-			if !residue.Equal(&One) { // Must be non-residue.
+			// parity differs from t, make it same
+			if y.GreaterThan(&QMinus1Half) != t.GreaterThan(&QMinus1Half) {
 				y.Neg(&y)
 			}
 			return x, y

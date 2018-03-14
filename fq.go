@@ -64,6 +64,12 @@ func (e *Fq) Equal(x *Fq) bool {
 	return C.fp_cmp(&e[0], &x[0]) == C.CMP_EQ
 }
 
+// e > x
+func (e *Fq) GreaterThan(x *Fq) bool {
+	return C.fp_cmp(&e[0], &x[0]) == C.CMP_GT
+}
+
+
 func (e *Fq) IsZero() bool {
 	return e.Equal(&Zero)
 }
