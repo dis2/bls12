@@ -1,10 +1,12 @@
+package bls12
 // Explicit formulas only.
 //
 // Fancy hash: 
 // https://www.di.ens.fr/~fouque/pub/latincrypt12.pdf
 // https://github.com/herumi/mcl/blob/9fbc54305d01b984e39d83e96bfa94bb17648a86/include/mcl/bn.hpp#L76
 //
-package bls12
+// This is called twice, with keyed hash. Scale both resulting points by
+// cofactor, and add them together for final point.
 func fouqueHalfPoint(t *Fq) (x, y Fq) {
 	var w, y2, ytest Fq
 	// w = (t^2 + 4 + 1)^(-1) * sqrt(-3) * t
