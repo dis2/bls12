@@ -22,6 +22,11 @@ import "fmt"
 
 type G2 = C.ep2_st
 
+func (p *G2) Copy() *G2 {
+	c := *p
+	return &c
+}
+
 // p = G2(inf)
 func (p *G2) SetZero() *G2 {
 	C.ep2_set_infty(p)

@@ -15,6 +15,11 @@ import "golang.org/x/crypto/blake2b"
 // Point on G1, y^2 = x^3 + 4
 type G1 = C.ep_st
 
+func (p *G1) Copy() *G1 {
+	c := *p
+	return &c
+}
+
 // Set affine coordinates X,Y with implicit Z=1
 func (p *G1) SetXY(x, y *Fq) *G1 {
 	p.x = *x

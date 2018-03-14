@@ -68,3 +68,10 @@ func (p *GT) Unmarshal(in []byte) ([]byte) {
 	C.fp12_read_bin(&p.st[0], (*C.uint8_t)(&in[0]), GTSize)
 	return in[GTSize:]
 }
+
+func (p *GT) Copy() *GT {
+	c := *p
+	return &c
+}
+
+
