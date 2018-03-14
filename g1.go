@@ -106,13 +106,9 @@ func halfpoint(prefix byte, msg []byte) (p G1) {
 func (p *G1) HashToPoint(msg []byte) *G1 {
 	a := halfpoint(0x00, msg)
 	a.ScaleByCofactor()
-
-	// Hmm, this does not seem to work.
-	if false {
-		b := halfpoint(0x01, msg) // G2 uses 0x10, 0x11 ..
-		b.ScaleByCofactor()
-		a.Add(&b)
-	}
+	b := halfpoint(0x01, msg) // G2 uses 0x10, 0x11 ..
+	b.ScaleByCofactor()
+	a.Add(&b)
 	*p = a
 	return p
 }
@@ -126,6 +122,7 @@ func (p *G1) MapIntToPoint(in *Fq) *G1 {
 }
 
 func (p *G1) Check() bool {
+	p.Normalize()
 	y2 := p.Y2FromX()
 	var ytest Fq
 	tp := *p
