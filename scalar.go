@@ -47,6 +47,9 @@ func (s *Scalar) Marshal() []byte {
 
 // up to 512bit scalar
 func ScalarConst(s string) (bn Scalar) {
+	if len(s)%2 != 0 {
+		panic("bad const padding for "+s)
+	}
 	bi := new(big.Int)
 	bi.SetString(s, 16)
 	bn.FromInt(bi)

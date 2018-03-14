@@ -2,17 +2,18 @@ package bls12
 
 // #include "relic_core.h"
 // #include "relic_fp.h"
+// void _fp_neg(fp_t r, const fp_t p);
 // void _fp_mul(fp_t c,fp_t a,fp_t b) { fp_mul(c,a,b); }
+// void _fp_add(fp_t c,fp_t a,fp_t b) { fp_add(c,a,b); }
+// void _fp_sub(fp_t c,fp_t a,fp_t b) { fp_sub(c,a,b); }
 // void _fp_sqr(fp_t c,fp_t a) { fp_sqr(c,a); }
+// void _fp_inv(fp_t c,fp_t a) { fp_inv(c,a); }
 // void _fp_exp(fp_t c,fp_t a,bn_t b) { fp_exp(c,a,b); }
 import "C"
+import "fmt"
 import "math/big"
 
 type Fq = C.fp_st
-
-// e = a ^ ((q-1)/2)A
-func (e *Fq) Legendre(a *Fq) {
-}
 
 // e = a^n
 func (e *Fq) Exp(a *Fq, n *Scalar) {
@@ -28,18 +29,48 @@ func (e *Fq) Square(x *Fq) *Fq {
 	return e
 }
 
+// e = a + b
+func (e *Fq) Add(a,b *Fq) *Fq {
+	C._fp_add(&e[0], &a[0], &b[0])
+	return e
+}
+
+// e = a - b
+func (e *Fq) Sub(a,b *Fq) *Fq {
+	C._fp_sub(&e[0], &a[0], &b[0])
+	return e
+}
+
+
+// e = x^-1
+func (e *Fq) Inverse(x *Fq) *Fq {
+	C._fp_inv(&e[0], &x[0])
+	return e
+}
+
+// e = -x
+func (e *Fq) Neg(x *Fq) *Fq {
+	C._fp_neg(&e[0], &x[0])
+	return e
+}
+
+
 func (e *Fq) Copy() Fq {
 	return *e
 }
 
-// e == a
-func (e *Fq) Equal(a *Fq) bool {
-	return C.fp_cmp(&e[0], &a[0]) == C.CMP_EQ
+// e == x
+func (e *Fq) Equal(x *Fq) bool {
+	return C.fp_cmp(&e[0], &x[0]) == C.CMP_EQ
 }
 
-// e = x * y
-func (e *Fq) Mul(x, y *Fq) *Fq {
-	C._fp_mul(&e[0], &x[0], &y[0])
+func (e *Fq) IsZero() bool {
+	return e.Equal(&Zero)
+}
+
+// e = a * b
+func (e *Fq) Mul(a, b *Fq) *Fq {
+	C._fp_mul(&e[0], &a[0], &b[0])
 	return e
 }
 
@@ -51,13 +82,9 @@ func (e *Fq) Cube(x *Fq) *Fq {
 }
 
 // e = 64 bit immediate n
-func (e *Fq) SetInt64(n int64) {
+func (e *Fq) SetInt64(n int64) *Fq {
 	C.fp_set_dig(&e[0], C.dig_t(n))
-}
-
-// e = a + 64 bit immediate n
-func (e *Fq) AddInt64(a *Fq, n int64) {
-	C.fp_add_dig(&e[0], &a[0], C.dig_t(n))
+	return e
 }
 
 func pad(buf []byte) []byte {
@@ -94,4 +121,6 @@ func (e *Fq) ToInt() *big.Int {
 	return new(big.Int).SetBytes(e.Marshal())
 }
 
-
+func (e *Fq) String() string {
+	return fmt.Sprintf("Fq(%d)", e.ToInt())
+}

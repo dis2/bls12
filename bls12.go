@@ -38,6 +38,9 @@ func init_pending() {
 }
 
 func QConst(s string) (f Fq) {
+	if len(s)%2 != 0 {
+		panic("bad const padding for "+s)
+	}
 	init_pending()
 	var buf [48]byte
 	pad := 48 - len(s)/2

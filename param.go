@@ -4,13 +4,27 @@ var (
 	// X = -((2**63) + (2**62) + (2**60) + (2**57) + (2**48) + (2**16))
 	X = hexConst("d201000000010000")
 	// R = (X**4) - (X**2) + 1 is the ~256 bit base prime field, this is the order of G1 and G2
-	R     = hexConst("73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001")
-	Order = R
+	R     = ScalarConst("73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001")
+	Order = R.ToInt()
+
 
 	// Q = (((X - 1) ** 2) * ((X**4) - (X**2) + 1) // 3) + X is the ~384bit extended prime field
 	Q = QConst("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab")
-	QMinus1Half = ScalarConst("d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd555")
-	QPlus1Quarter = ScalarConst("680447a8e5ff9a692c6e9ed90d2eb35d91dd2e13ce144afd9cc34a83dac3d8907aaffffac54ffffee7fbfffffffeaab")
+	QMinus1 = QConst("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaaa")
+	// (Q-1)/2, used for legendre
+	QMinus1Half = ScalarConst("0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd555")
+	// (Q+1)/4, used for tonelli-shanks
+	QPlus1Quarter = ScalarConst("0680447a8e5ff9a692c6e9ed90d2eb35d91dd2e13ce144afd9cc34a83dac3d8907aaffffac54ffffee7fbfffffffeaab")
+
+	// sqrt(-3), swenc const0
+	QSqrtMinus3 = QConst("be32ce5fbeed9ca374d38c0ed41eefd5bb675277cdf12d11bc2fb026c41400045c03fffffffdfffd")
+
+	// (sqrt(-3)-1) / 2, swenc const1
+	QSqrtMinus3Minus1Half = QConst("5f19672fdf76ce51ba69c6076a0f77eaddb3a93be6f89688de17d813620a00022e01fffffffefffe") // SWENC_CONST1
+	One = QConst("01")
+	Zero = QConst("00")
+	Four = QConst("04")
+	Five = QConst("05")
 
 	// G1 cofactor, ((X-1)**2) // 3
 	G1_h = ScalarConst("396C8C005555E1568C00AAAB0000AAAB")

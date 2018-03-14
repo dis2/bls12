@@ -47,9 +47,41 @@ func TestSetOne(t *testing.T) {
 	new(G1).SetOne()
 }
 
-func TestHashToPoint(t *testing.T) {
+func TestHashToPointRelic(t *testing.T) {
+	for i := 0; i < 1000; i++ {
+		var p G1
+		var buf [512]byte
+
+		buf[0] = byte(i)
+		buf[1] = byte(i>>8)
+		buf[2] = byte(i>>16)
+		p.HashToPointRelic(buf[:])
+		if !p.Check() {
+			t.Fatalf("point landed in wrong subgroup for %d\n", i)
+		}
+	}
+
 	// Via relic (hardcoded sha384)
-	p1 := new(G1).HashToPoint([]byte("test2"))
+	p1 := new(G1).HashToPointRelic([]byte("test2"))
+	if !p1.Check() {
+		t.Fatal("relic gave us wrong point?")
+	}
+
+	for i := 0; i < 1000; i++ {
+		var p G1
+		var buf [64]byte
+		buf[0] = byte(i)
+		buf[1] = byte(i>>8)
+		buf[2] = byte(i>>16)
+		sum := sha512.Sum384(buf[:])
+		sum[0] &= 0xf
+		var f Fq
+		f.Unmarshal(sum[0:48])
+		p.MapIntToPoint(&f)
+		if !p.Check() {
+			t.Fatal("point landed in wrong subgroup")
+		}
+	}
 
 	// Manually via custom hash
 	buf := sha512.Sum384([]byte("test2"))
@@ -58,8 +90,23 @@ func TestHashToPoint(t *testing.T) {
 	if !p1.Equal(p2) {
 		t.Fatal("misbehaving hashtopoint")
 	}
+
+
 }
 
+func TestHashToPointFouque(t *testing.T) {
+	var p G1
+	var buf [512]byte
+	for i := 0; i < 1000; i++ {
+		buf[0] = byte(i)
+		buf[1] = byte(i>>8)
+		buf[2] = byte(i>>16)
+		p.HashToPoint(buf[:])
+		if !p.Check() {
+			t.Fatalf("point landed in wrong subgroup for %d\n", i)
+		}
+	}
+}
 
 func TestVectorG1Compressed(t *testing.T) {
 	//	t.Run("Compressed", func(t *testing.T) {

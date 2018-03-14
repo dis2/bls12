@@ -10,32 +10,10 @@ package bls12
 // void ep_mul_cof_b12(ep_t r, ep_t p);
 import "C"
 import "fmt"
+import "golang.org/x/crypto/blake2b"
 
 // Point on G1, y^2 = x^3 + 4
 type G1 = C.ep_st
-
-// Computes x,y for nearest point in Fq, given the x.
-// We land in unknown subgroup, caller is responsible for scaling by cofactor.
-func g1MapXtoY(in *Fq) (x, y Fq) {
-	x = *in
-	for {
-		var y2, ytest Fq
-		// y2 = y^2 = x^3 + 4
-		y2.Square(&x)
-		y2.Mul(&y2,&x)
-		y2.AddInt64(&y2, 4)
-
-		// y = y2 ^ ((q+1)/4)
-		y.Exp(&y2, &QPlus1Quarter)
-
-		// if y^2 == y2
-		if y2.Equal(ytest.Square(&y)) {
-			return
-		}
-
-		x.AddInt64(&x,1)
-	}
-}
 
 // Set affine coordinates X,Y with implicit Z=1
 func (p *G1) SetXY(x, y *Fq) *G1 {
@@ -112,17 +90,53 @@ func (p *G1) HashToPointRelic(b []byte) *G1 {
 	return p
 }
 
-func (p *G1) HashToPoint(b []byte) *G1 {
-	C.ep_map(p, (*C.uint8_t)(&b[0]), C.int(len(b)))
+// CAVEAT: The blake2 usage here is a placeholder, until something materializes.
+func halfpoint(prefix byte, msg []byte) (p G1) {
+	h := blake2b.Sum384(append([]byte{prefix}, msg...))
+	// trim to 380 bits
+	h[0] &= 0x0f
+	var t Fq
+	t.Unmarshal(h[:])
+	x, y := fouqueHalfPoint(&t)
+	p.SetXY(&x,&y)
+	return
+}
+
+// Hash to point
+func (p *G1) HashToPoint(msg []byte) *G1 {
+	a := halfpoint(0x00, msg)
+	a.ScaleByCofactor()
+
+	// Hmm, this does not seem to work.
+	if false {
+		b := halfpoint(0x01, msg) // G2 uses 0x10, 0x11 ..
+		b.ScaleByCofactor()
+		a.Add(&b)
+	}
+	*p = a
 	return p
 }
 
 // Map arbitrary integer to a point, for use with custom hash function.
 func (p *G1) MapIntToPoint(in *Fq) *G1 {
-	x, y := g1MapXtoY(in)
+	x, y := mapXtoY(in)
 	p.SetXY(&x,&y)
 	p.ScaleByCofactor()
 	return p
+}
+
+func (p *G1) Check() bool {
+	y2 := p.Y2FromX()
+	var ytest Fq
+	tp := *p
+	return ytest.Square(&p.y).Equal(&y2) && tp.ScalarMult(&R).IsZero()
+}
+
+func (p *G1) Y2FromX() (y2 Fq) {
+	y2.Square(&p.x)
+	y2.Mul(&y2,&p.x)
+	y2.Add(&y2, &Four)
+	return
 }
 
 const (
@@ -192,7 +206,7 @@ func (p *G1) Marshal() (res []byte) {
 	var bin [G1Size + 1]byte
 	res = bin[1:]
 
-	if C.ep_is_infty(p) == 1 {
+	if p.IsZero() {
 		res[0] = serializationInfinity | serializationCompressed
 		return
 	}
