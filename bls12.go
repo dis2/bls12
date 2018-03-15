@@ -39,7 +39,7 @@ func init_pending() {
 
 func QConst(s string) (f Fq) {
 	if len(s)%2 != 0 {
-		panic("bad const padding for "+s)
+		panic("bad const padding for " + s)
 	}
 	init_pending()
 	var buf [48]byte
@@ -70,7 +70,7 @@ func unmarshalG(p marshallerG, in []byte) (res []byte) {
 	bin[0] &= serializationMask
 
 	compressed := flags&serializationCompressed != 0
-	inlen := size*2
+	inlen := size * 2
 	if compressed {
 		inlen = size
 	} else if len(in) < inlen {
@@ -94,15 +94,15 @@ func unmarshalG(p marshallerG, in []byte) (res []byte) {
 		return res
 	}
 
-	X,Y,_ := p.GetXYZ()
+	X, Y, _ := p.GetXYZ()
 	X.Unmarshal(bin[:])
 	if compressed {
 		if !Y.Y2FromX(X).Sqrt(nil) {
 			return nil
 		}
-		Y.EnsureParity(flags&serializationBigY!=0)
+		Y.EnsureParity(flags&serializationBigY != 0)
 	} else {
-		Y.Unmarshal(in[size:size*2])
+		Y.Unmarshal(in[size : size*2])
 	}
 	p.SetNormalized()
 	if !p.Check() {
@@ -115,9 +115,9 @@ func unmarshalG(p marshallerG, in []byte) (res []byte) {
 // Marshal the point, compressed to X and sign.
 func marshalG(p marshallerG, comp int) (res []byte) {
 	p.Normalize()
-	X,Y,_ := p.GetXYZ()
+	X, Y, _ := p.GetXYZ()
 	if p.IsZero() {
-		res = make([]byte, p.getSize() * comp)
+		res = make([]byte, p.getSize()*comp)
 		res[0] = serializationInfinity
 		if comp == 1 {
 			res[0] |= serializationCompressed
@@ -138,11 +138,10 @@ func marshalG(p marshallerG, comp int) (res []byte) {
 
 type marshallerG interface {
 	getSize() int
-	GetXYZ() (x,y,z Field)
+	GetXYZ() (x, y, z Field)
 	Check() bool
 	SetZero()
 	Normalize()
 	SetNormalized()
 	IsZero() bool
 }
-

@@ -95,5 +95,3 @@ func (p *G2) Equal(q *G2) bool {
 func (p *G2) IsZero() bool {
 	return C.ep2_is_infty(p.l()) == 1
 }
-
-

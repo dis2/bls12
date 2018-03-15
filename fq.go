@@ -42,7 +42,7 @@ func (e *Fq) EnsureParity(p bool) bool {
 			*e = nege
 		}
 		return false
-	// The negative is smaller
+		// The negative is smaller
 	} else {
 		if !p {
 			// And we want it set
@@ -50,6 +50,11 @@ func (e *Fq) EnsureParity(p bool) bool {
 		}
 		return true
 	}
+}
+
+func (e *Fq) GetB() Field {
+	*e = Four
+	return e
 }
 
 func (e *Fq) Copy() Field {
@@ -64,7 +69,6 @@ func (e *Fq) New() Field {
 func (e *Fq) Set(x Field) {
 	*e = *x.(*Fq)
 }
-
 
 // Cast Fq into .. Fq. Silly, but needed to satisfy interface.
 // The contract is to never depend on value of 'tmp', and always use only
@@ -91,7 +95,6 @@ func (e *Fq) Y2FromX(x Field) Field {
 	e.Add(e, &Four)
 	return e
 }
-
 
 func pad(buf []byte) []byte {
 	n := len(buf)

@@ -17,5 +17,3 @@ func (p *GT) Copy() *GT {
 	c := *p
 	return &c
 }
-
-

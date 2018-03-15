@@ -47,7 +47,6 @@ func G1One() (res *G1) {
 	return
 }
 
-
 // p = s * G1(p)
 func (p *G1) ScalarMult(s *Scalar) *G1 {
 	C._ep_mul(p.l(), p.l(), s)
@@ -78,5 +77,3 @@ func (p *G1) Equal(q *G1) bool {
 func (p *G1) IsZero() bool {
 	return C.ep_is_infty(p.l()) == 1
 }
-
-

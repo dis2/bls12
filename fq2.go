@@ -16,6 +16,12 @@ func (e *Fq2) opt(x Field) *Fq2 {
 	return v
 }
 
+func (e *Fq2) GetB() Field {
+	e.C[0].GetB()
+	e.C[1].GetB()
+	return e
+}
+
 func (e *Fq2) New() Field {
 	return &Fq2{}
 }
@@ -57,7 +63,7 @@ func (e *Fq2) EnsureParity(p bool) bool {
 			*e = nege
 		}
 		return false
-	// The negative is smaller
+		// The negative is smaller
 	} else {
 		if !p {
 			// And we want it set
@@ -66,7 +72,6 @@ func (e *Fq2) EnsureParity(p bool) bool {
 		return true
 	}
 }
-
 
 func (e *Fq2) Copy() Field {
 	t := *e
@@ -94,7 +99,7 @@ func (e *Fq2) Cube(x Field) Field {
 // e = 64 bit immediate n
 func (e *Fq2) SetInt64(n int64) Field {
 	e.C[0].SetInt64(n)
-	e.C[1] = Zero
+	e.C[1].SetInt64(n)
 	return e
 }
 
@@ -103,7 +108,7 @@ func (e *Fq2) Y2FromX(x Field) Field {
 	var tmp Fq2
 	e.Square(&xx)
 	e.Mul(e, &xx)
-	e.Add(e, tmp.Cast(&Four))
+	e.Add(e, tmp.GetB())
 	return e
 }
 
@@ -112,7 +117,7 @@ func (e *Fq2) Y2FromX(x Field) Field {
 // whatever is returned.
 func (tmp *Fq2) Cast(v *Fq) Field {
 	tmp.C[0] = *v
-	tmp.C[1] = *v
+	tmp.C[1] = Zero
 	return tmp
 }
 
@@ -126,6 +131,3 @@ func (e *Fq2) Unmarshal(b []byte) []byte {
 func (e *Fq2) Marshal() []byte {
 	return append(e.C[1].Marshal(), e.C[0].Marshal()...)
 }
-
-
-

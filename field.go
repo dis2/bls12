@@ -4,9 +4,9 @@ package bls12
 type Field interface {
 	Exp(a Field, n *Scalar) Field
 	Square(x Field) Field
-	Add(a,b Field) Field
-	Mul(a,b Field) Field
-	Sub(a,b Field) Field
+	Add(a, b Field) Field
+	Mul(a, b Field) Field
+	Sub(a, b Field) Field
 	Inverse(x Field) Field
 	Neg(x Field) Field
 	Sqrt(a Field) bool
@@ -23,4 +23,5 @@ type Field interface {
 	Copy() Field
 	Set(Field)
 	New() Field
+	GetB() Field
 }

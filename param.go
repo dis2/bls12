@@ -7,9 +7,11 @@ var (
 	R     = ScalarConst("73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001")
 	Order = R.ToInt()
 
+	// B
+	Four = QConst("04")
 
 	// Q = (((X - 1) ** 2) * ((X**4) - (X**2) + 1) // 3) + X is the ~384bit extended prime field
-	Q = QConst("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab")
+	Q       = QConst("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab")
 	QMinus1 = QConst("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaaa")
 	// (Q-1)/2, used for legendre
 	QMinus1Half = QConst("0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd555")
@@ -21,10 +23,8 @@ var (
 
 	// (sqrt(-3)-1) / 2, swenc const1
 	QSqrtMinus3Minus1Half = QConst("5f19672fdf76ce51ba69c6076a0f77eaddb3a93be6f89688de17d813620a00022e01fffffffefffe") // SWENC_CONST1
-	One = QConst("01")
-	Zero = QConst("00")
-	Four = QConst("04")
-	Five = QConst("05")
+	One                   = QConst("01")
+	Zero                  = QConst("00")
 
 	// G1 cofactor, ((X-1)**2) // 3
 	G1_h = ScalarConst("396C8C005555E1568C00AAAB0000AAAB")

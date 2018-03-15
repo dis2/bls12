@@ -49,15 +49,14 @@ func (e *Fq2) Sqrt(x Field) bool {
 	return C._fp2_srt(e.l(), e.le(x)) == C.int(1)
 }
 
-
 // e = a + b
-func (e *Fq2) Add(a,b Field) Field {
+func (e *Fq2) Add(a, b Field) Field {
 	C._fp2_add(e.l(), e.le(a), b.l())
 	return e
 }
 
 // e = a - b
-func (e *Fq2) Sub(a,b Field) Field {
+func (e *Fq2) Sub(a, b Field) Field {
 	C._fp2_sub(e.l(), e.le(a), b.l())
 	return e
 }
@@ -79,5 +78,3 @@ func (e *Fq2) Mul(a, b Field) Field {
 	C._fp2_mul(e.l(), e.le(a), b.l())
 	return e
 }
-
-

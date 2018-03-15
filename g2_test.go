@@ -2,8 +2,8 @@ package bls12
 
 import (
 	"bytes"
-	"testing"
 	"crypto/rand"
+	"testing"
 )
 
 func BenchmarkUncompressG2(b *testing.B) {
@@ -30,8 +30,8 @@ func TestHashToPointG2(t *testing.T) {
 	var buf [512]byte
 	for i := 0; i < 1000; i++ {
 		buf[0] = byte(i)
-		buf[1] = byte(i>>8)
-		buf[2] = byte(i>>16)
+		buf[1] = byte(i >> 8)
+		buf[2] = byte(i >> 16)
 		p.HashToPoint(buf[:])
 		if !p.Check() {
 			t.Fatalf("point landed in wrong subgroup for %d\n", i)
@@ -48,7 +48,6 @@ func TestVectorG2Compressed(t *testing.T) {
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		t.Logf("%d <- %x", i, d[:G2Size])
 		ok := a.Unmarshal(d[:G2Size])
 		if ok == nil {
 			t.Errorf("%d: failed decoding", i)
@@ -64,8 +63,9 @@ func TestVectorG2Compressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep2.Marshal()
-		t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G2Size]) {
+			t.Logf("%d <- %x", i, d[:G2Size])
+			t.Logf("%d -> %x", i, buf)
 			t.Errorf("%d: different encoding", i)
 		}
 		d = d[G2Size:]

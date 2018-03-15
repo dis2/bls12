@@ -52,14 +52,11 @@ func (p *GT) Marshal() []byte {
 	return bin[:]
 }
 
-
 // Unmarshal GT from a byte buffer.
-func (p *GT) Unmarshal(in []byte) ([]byte) {
+func (p *GT) Unmarshal(in []byte) []byte {
 	if len(in) < GTSize {
 		return nil
 	}
 	C.fp12_read_bin(p.l(), (*C.uint8_t)(&in[0]), GTSize)
 	return in[GTSize:]
 }
-
-

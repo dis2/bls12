@@ -1,7 +1,7 @@
 package bls12
 
 import "fmt"
-//import "golang.org/x/crypto/sha3"
+import "golang.org/x/crypto/sha3"
 
 // Point on G2 y^2 = x^3 + 4(u+1) represented by x and y Fq2 coords.
 // This structure holds either affine or (extended) projective form on ad-hoc
@@ -9,7 +9,7 @@ import "fmt"
 // You can force point to become affine with Normalize().
 type G2 struct {
 	X, Y, Z Fq2
-	Norm bool
+	Norm    bool
 }
 
 func (p *G2) Copy() *G2 {
@@ -18,7 +18,7 @@ func (p *G2) Copy() *G2 {
 }
 
 // Set affine coordinates X,Y with implicit Z=1
-func (p *G2) SetXY(x,y Field) {
+func (p *G2) SetXY(x, y Field) {
 	p.X = *x.(*Fq2)
 	p.Y = *y.(*Fq2)
 	p.SetNormalized()
@@ -30,39 +30,31 @@ func (p *G2) SetNormalized() {
 	p.Norm = true
 }
 
-// Get a copy of coordinates of the element.
+// Get interface pointers to XYZ coordinates.
 // You may need to call Normalize() first if you want affine and ignore Z.
-func (p *G2) GetXYZ() (x,y,z Field) {
+func (p *G2) GetXYZ() (x, y, z Field) {
 	return &p.X, &p.Y, &p.Z
 }
 
 // HashToPoint the message.
 func (p *G2) HashToPoint(msg []byte) *G2 {
-	/*
-	var h [48]byte
-	var t2 Fq2
 	state := sha3.NewShake256()
 	state.Write([]byte("BLS12-381 G2"))
 	state.Write(msg)
 
-	for i := 0; i < 2; i++ {
-		var t Fq
-		state.Read(h[:])
-		// trim to 380 bits
-		h[0] &= 0x0f
-		t.Unmarshal(h[:])
-		x, y := FouqueMapXtoY(&t)
-		t2[i].SetXY(x.(*Fq2), y.(*Fq2))
-	}
-	x, y := t.FouqueMapXtoY()
-	p.SetXY(&x, &y)
-	p.ScaleByCofactor()*/
+	var t Fq2
+	var h [96]byte
+	state.Read(h[:])
+	t.C[1].Unmarshal(t.C[0].Unmarshal(h[:]))
+	x, y := FouqueMapXtoY(&t)
+	p.SetXY(x, y)
+	p.ScaleByCofactor()
 	return p
 }
 
 func (p *G2) MapIntToPoint(in *Fq2) *G2 {
 	x, y := MapXtoY(in)
-	p.SetXY(x,y)
+	p.SetXY(x, y)
 	p.ScaleByCofactor()
 	return p
 }
@@ -72,16 +64,12 @@ const (
 	G2UncompressedSize = 2 * G2Size
 )
 
-func (p *G2) Check() bool {
-	return true
-}
 // Check that the point is on the curve and in correct subgroup.
-/*func (p *G2) Check() bool {
+func (p *G2) Check() bool {
 	p.Normalize()
-	x1,x2,y1,y2,z1,z2 := p.GetXXYYZZ()
-	y12, y22 := x1.Y2FromX(), x2.Y2FromX()
-	return z1.Square(&y1).Equal(&y12) && z2.Square(&y2).Equal(&y22) && p.Copy().ScalarMult(&R).IsZero()
-}*/
+	y2 := new(Fq2).Y2FromX(&p.X)
+	return new(Fq2).Square(&p.Y).Equal(y2) && p.Copy().ScalarMult(&R).IsZero()
+}
 
 func (p *G2) String() string {
 	return fmt.Sprintf("bls12.G2(%x)", p.Marshal())

@@ -8,7 +8,7 @@ import "math/big"
 import "fmt"
 
 const (
-	ScalarSize = 32
+	ScalarSize    = 32
 	BigScalarSize = 32
 )
 
@@ -31,7 +31,6 @@ func (s *Scalar) String() string {
 	return fmt.Sprintf("bls12.Scalar(%x)", s.Marshal())
 }
 
-
 // Unmarshal scalar from a byte buffer. Only small 256bit scalars are
 // to be marshalled.
 func (s *Scalar) Unmarshal(buf []byte) {
@@ -48,11 +47,10 @@ func (s *Scalar) Marshal() []byte {
 // up to 512bit scalar
 func ScalarConst(s string) (bn Scalar) {
 	if len(s)%2 != 0 {
-		panic("bad const padding for "+s)
+		panic("bad const padding for " + s)
 	}
 	bi := new(big.Int)
 	bi.SetString(s, 16)
 	bn.FromInt(bi)
 	return
 }
-

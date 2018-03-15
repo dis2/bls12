@@ -9,7 +9,7 @@ import "golang.org/x/crypto/sha3"
 // You can force point to become affine with Normalize().
 type G1 struct {
 	X, Y, Z Fq
-	Norm bool
+	Norm    bool
 }
 
 func (p *G1) Copy() *G1 {
@@ -34,7 +34,7 @@ func (p *G1) SetNormalized() {
 
 // Get a copy of coordinates of the element.
 // You may need to call Normalize() first if you want affine and ignore Z.
-func (p *G1) GetXYZ() (x,y,z Field) {
+func (p *G1) GetXYZ() (x, y, z Field) {
 	return &p.X, &p.Y, &p.Z
 }
 
@@ -64,7 +64,7 @@ func (p *G1) HashToPoint(msg []byte) *G1 {
 // Map arbitrary integer to a point, for use with custom hash function.
 func (p *G1) MapIntToPoint(in *Fq) *G1 {
 	x, y := MapXtoY(in)
-	p.SetXY(x,y)
+	p.SetXY(x, y)
 	p.ScaleByCofactor()
 	return p
 }

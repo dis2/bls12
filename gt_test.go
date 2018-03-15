@@ -13,7 +13,7 @@ func BenchmarkUncompressGT(b *testing.B) {
 	g1 := new(G1).ScalarBaseMult(s)
 	g2 := new(G2).ScalarBaseMult(s2)
 	gt := GT{}
-	gt.Pair(g1,g2)
+	gt.Pair(g1, g2)
 	gt2 := GT{}
 	m := gt.Marshal()
 
@@ -24,7 +24,7 @@ func BenchmarkUncompressGT(b *testing.B) {
 }
 
 func TestMarshalGT(t *testing.T) {
-	for i:= 1; i < 1000; i++ {
+	for i := 1; i < 1000; i++ {
 		x, _ := rand.Int(rand.Reader, Order)
 		x2, _ := rand.Int(rand.Reader, Order)
 		s := new(Scalar).FromInt(x)
@@ -32,7 +32,7 @@ func TestMarshalGT(t *testing.T) {
 		g1 := new(G1).ScalarBaseMult(s)
 		g2 := new(G2).ScalarBaseMult(s2)
 		gt := GT{}
-		gt.Pair(g1,g2)
+		gt.Pair(g1, g2)
 		gt2 := GT{}
 		gt2.Unmarshal(gt.Marshal())
 		if gt != gt2 {
@@ -49,6 +49,6 @@ func BenchmarkPairGT(b *testing.B) {
 	e := GT{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		e.Pair(g1,g2)
+		e.Pair(g1, g2)
 	}
 }

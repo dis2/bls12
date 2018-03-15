@@ -29,7 +29,6 @@ func (e *Fq) le(x Field) *Limb {
 	return v.l()
 }
 
-
 // e = a^n
 func (e *Fq) Exp(a Field, n *Scalar) Field {
 	C._fp_exp(e.l(), e.le(a), n)
@@ -43,17 +42,16 @@ func (e *Fq) Square(x Field) Field {
 }
 
 // e = a + b
-func (e *Fq) Add(a,b Field) Field {
-	C._fp_add(e.l(),e.le(a),b.l())
+func (e *Fq) Add(a, b Field) Field {
+	C._fp_add(e.l(), e.le(a), b.l())
 	return e
 }
 
 // e = a - b
-func (e *Fq) Sub(a,b Field) Field {
-	C._fp_sub(e.l(),e.le(a),b.l())
+func (e *Fq) Sub(a, b Field) Field {
+	C._fp_sub(e.l(), e.le(a), b.l())
 	return e
 }
-
 
 // e = 1/x
 func (e *Fq) Inverse(x Field) Field {
@@ -77,12 +75,12 @@ func (e *Fq) GreaterThan(x Field) bool {
 	var buf1, buf2 [48]byte
 	C.fp_write_bin((*C.uint8_t)(&buf1[0]), 48, e.l())
 	C.fp_write_bin((*C.uint8_t)(&buf2[0]), 48, x.l())
-	return bytes.Compare(buf1[:],buf2[:]) == 1
+	return bytes.Compare(buf1[:], buf2[:]) == 1
 }
 
 // e = a * b
 func (e *Fq) Mul(a, b Field) Field {
-	C._fp_mul(e.l(),e.le(a),b.l())
+	C._fp_mul(e.l(), e.le(a), b.l())
 	return e
 }
 
@@ -112,7 +110,3 @@ func (e *Fq) Marshal() []byte {
 	C.fp_write_bin((*C.uint8_t)(&buf[0]), 48, e.l())
 	return buf[:]
 }
-
-
-
-
