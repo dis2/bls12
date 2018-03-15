@@ -51,4 +51,95 @@ func QConst(s string) (f Fq) {
 	return
 }
 
+const (
+	// https://github.com/ebfull/pairing/tree/master/src/bls12_381#serialization
+	serializationMask       = (1 << 5) - 1
+	serializationCompressed = 1 << 7
+	serializationInfinity   = 1 << 6
+	serializationBigY       = 1 << 5
+)
+
+func unmarshalG(p marshallerG, in []byte) (res []byte) {
+	size := p.getSize()
+	if len(in) < size {
+		return nil
+	}
+	var bin = make([]byte, size)
+	copy(bin[:], in)
+	flags := bin[0]
+	bin[0] &= serializationMask
+
+	compressed := flags&serializationCompressed != 0
+	inlen := size*2
+	if compressed {
+		inlen = size
+		res = in[inlen:]
+	} else if len(in) < size*2 {
+		return nil
+	}
+
+	// Big Y, but we're not compressed, or infinity is serialized
+	if (flags&serializationBigY != 0) && (!compressed || (flags&serializationInfinity != 0)) {
+		return nil
+	}
+
+	if flags&serializationInfinity != 0 {
+		// Check that rest is zero
+		for _, v := range in[1:inlen] {
+			if v != 0 {
+				return nil
+			}
+		}
+		p.SetZero()
+		return res
+	}
+
+	X,Y,_ := p.GetXYZ()
+	X.Unmarshal(bin[:])
+	if compressed {
+		if !Y.Y2FromX(X).Sqrt(nil) {
+			return nil
+		}
+		Y.EnsureParity(flags&serializationBigY!=0)
+	} else {
+		Y.Unmarshal(in[size:size*2])
+	}
+	p.SetNormalized()
+	if !p.Check() {
+		return nil
+	}
+	return res
+
+}
+
+// Marshal the point, compressed to X and sign.
+func marshalG(p marshallerG, comp int) (res []byte) {
+	p.Normalize()
+	X,Y,_ := p.GetXYZ()
+	if p.IsZero() {
+		res = make([]byte, p.getSize() * comp)
+		res[0] = serializationInfinity
+	} else {
+		res = X.Marshal()
+		if Y.Copy().EnsureParity(false) {
+			res[0] |= serializationBigY
+		}
+	}
+	if comp == 1 {
+		res[0] |= serializationCompressed
+	} else {
+		res = append(res, Y.Marshal()...)
+	}
+	return
+}
+
+type marshallerG interface {
+	getSize() int
+	GetXYZ() (x,y,z Field)
+	Check() bool
+	SetZero()
+	Normalize()
+	SetNormalized()
+	IsZero() bool
+}
 

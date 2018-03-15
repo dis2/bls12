@@ -25,17 +25,30 @@ func BenchmarkMultG2(b *testing.B) {
 	}
 }
 
+func TestHashToPointG2(t *testing.T) {
+	var p G2
+	var buf [512]byte
+	for i := 0; i < 1000; i++ {
+		buf[0] = byte(i)
+		buf[1] = byte(i>>8)
+		buf[2] = byte(i>>16)
+		p.HashToPoint(buf[:])
+		if !p.Check() {
+			t.Fatalf("point landed in wrong subgroup for %d\n", i)
+		}
+	}
+}
 
 func TestVectorG2Compressed(t *testing.T) {
 	var (
 		data = readFile(t, "testdata/g2_compressed_valid_test_vectors.dat")
-		ep2  = new(G2).SetZero()
+		ep2  = G2Zero()
 		a    = new(G2)
-		one  = new(G2).SetOne()
+		one  = G2One()
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		t.Logf("%d <- %x", i, d[:G2Size])
+		//t.Logf("%d <- %x", i, d[:G2Size])
 		ok := a.Unmarshal(d[:G2Size])
 		if ok == nil {
 			t.Errorf("%d: failed decoding", i)
@@ -44,7 +57,7 @@ func TestVectorG2Compressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep2.Marshal()
-		t.Logf("%d -> %x", i, buf)
+		//t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G2Size]) {
 			t.Errorf("%d: different encoding", i)
 		}
@@ -55,13 +68,13 @@ func TestVectorG2Compressed(t *testing.T) {
 func TestVectorG2Uncompressed(t *testing.T) {
 	var (
 		data = readFile(t, "testdata/g2_uncompressed_valid_test_vectors.dat")
-		ep2  = new(G2).SetZero()
+		ep2  = G2Zero()
 		a    = new(G2)
-		one  = new(G2).SetOne()
+		one  = G2One()
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		t.Logf("%d <- %x", i, d[:G2UncompressedSize])
+		//t.Logf("%d <- %x", i, d[:G2UncompressedSize])
 		ok := a.Unmarshal(d[:G2UncompressedSize])
 		if ok == nil {
 			t.Errorf("%d: failed decoding", i)
@@ -70,7 +83,7 @@ func TestVectorG2Uncompressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep2.MarshalUncompressed()
-		t.Logf("%d -> %x", i, buf)
+		//t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G2UncompressedSize]) {
 			t.Errorf("%d: different encoding", i)
 		}

@@ -1,19 +1,16 @@
 package bls12
 
-// #include "relic_core.h"
-// #include "relic_fp.h"
-// #include "relic_ep.h"
-// void _ep_add(ep_t r, const ep_t p, const ep_t q) { ep_add(r, p, q); }
-// void _ep_neg(ep_t r, const ep_t p) { ep_neg(r, p); }
-// void _ep_mul(ep_t r, const ep_t p, const bn_st *k) { ep_mul(r, p, k); }
-// void _fp_neg(fp_t r, const fp_t p);
-// void ep_mul_cof_b12(ep_t r, ep_t p);
-import "C"
 import "fmt"
-import "golang.org/x/crypto/blake2b"
+import "golang.org/x/crypto/sha3"
 
-// Point on G1, y^2 = x^3 + 4
-type G1 = C.ep_st
+// Point on G1 y^2 = x^3 + 4 represented by x and y Fq coords.
+// This structure holds either affine or (extended) projective form on ad-hoc
+// basis signalled by the Norm flag. All operations can deal with either form.
+// You can force point to become affine with Normalize().
+type G1 struct {
+	X, Y, Z Fq
+	Norm bool
+}
 
 func (p *G1) Copy() *G1 {
 	c := *p
@@ -21,24 +18,24 @@ func (p *G1) Copy() *G1 {
 }
 
 // Set affine coordinates X,Y with implicit Z=1
-func (p *G1) SetXY(x, y *Fq) *G1 {
-	p.x = *x
-	p.y = *y
+func (p *G1) SetXY(x, y Field) {
+	p.X = *x.(*Fq)
+	p.Y = *y.(*Fq)
 
 	// Implicitly normalized
-	p.z.SetInt64(1)
-	p.norm = 1
-	return p
+	p.SetNormalized()
 }
 
-// Get pointers to raw coordinates of the element.
-func (p *G1) GetXYZ() (x,y,z *Fq) {
-	return &p.x, &p.y, &p.z
+// Make the point explicitly normalized (ie after manually editing X/Y)
+func (p *G1) SetNormalized() {
+	p.Z = One
+	p.Norm = true
 }
 
-// Normalize XY to Z=1
-func (p *G1) Normalize() {
-	C.ep_norm(p, p)
+// Get a copy of coordinates of the element.
+// You may need to call Normalize() first if you want affine and ignore Z.
+func (p *G1) GetXYZ() (x,y,z Field) {
+	return &p.X, &p.Y, &p.Z
 }
 
 // p = G1_h * G1(p)
@@ -46,161 +43,116 @@ func (p *G1) ScaleByCofactor() {
 	p.ScalarMult(&G1_h)
 }
 
-// p = G1(inf)
-func (p *G1) SetZero() *G1 {
-	C.ep_set_infty(p)
-	return p
-}
-
-// p = G1(G)
-func (p *G1) SetOne() *G1 {
-	C.ep_curve_get_gen(p)
-	return p
-}
-
-// p = s * G1(p)
-func (p *G1) ScalarMult(s *Scalar) *G1 {
-	C._ep_mul(p, p, s)
-	return p
-}
-
-// p = s * G1(G)
-func (p *G1) ScalarBaseMult(s *Scalar) *G1 {
-	C.ep_mul_gen(p, s)
-	return p
-}
-
-// p = p + q
-func (p *G1) Add(q *G1) *G1 {
-	C._ep_add(p, p, q)
-	return p
-}
-
-// Check if points are the same. This is needed when the points are not
-// in normalized form - there's an algebraic trick in relic to do the comparison
-// faster than normalizing first. If you're sure the points are normalized, it's
-// possible to compare directly with ==.
-func (p *G1) Equal(q *G1) bool {
-	return C.ep_cmp(p, q) == C.CMP_EQ
-}
-
-// p == G1(inf)
-func (p *G1) IsZero() bool {
-	return C.ep_is_infty(p) == 1
-}
-
-// HashToPoint the buffer, using whatever relic does.
-func (p *G1) HashToPointRelic(b []byte) *G1 {
-	C.ep_map(p, (*C.uint8_t)(&b[0]), C.int(len(b)))
-	return p
-}
-
-// CAVEAT: The blake2 usage here is a placeholder, until something materializes.
-func halfpoint(prefix byte, msg []byte) (p G1) {
-	h := blake2b.Sum384(append([]byte{prefix}, msg...))
-	// trim to 380 bits
-	h[0] &= 0x0f
-	var t Fq
-	t.Unmarshal(h[:])
-	x, y := fouqueHalfPoint(&t)
-	p.SetXY(&x,&y)
-	return
-}
-
 // Hash to point
 func (p *G1) HashToPoint(msg []byte) *G1 {
-	a := halfpoint(0x00, msg)
-	a.ScaleByCofactor()
-	b := halfpoint(0x01, msg) // G2 uses 0x10, 0x11 ..
-	b.ScaleByCofactor()
-	a.Add(&b)
-	*p = a
+	var h [48]byte
+	var t Fq
+	state := sha3.NewShake256()
+	state.Write([]byte("BLS12-381 G1"))
+	state.Write(msg)
+	state.Read(h[:])
+	// trim to 380 bits
+	h[0] &= 0x0f
+	t.Unmarshal(h[:])
+	x, y := FouqueMapXtoY(&t)
+	y.CopyParity(&t)
+	p.SetXY(x, y)
+	p.ScaleByCofactor()
 	return p
 }
 
 // Map arbitrary integer to a point, for use with custom hash function.
 func (p *G1) MapIntToPoint(in *Fq) *G1 {
-	x, y := mapXtoY(in)
-	p.SetXY(&x,&y)
+	x, y := MapXtoY(in)
+	p.SetXY(x,y)
 	p.ScaleByCofactor()
 	return p
 }
 
+// Check that the point is on the curve and in correct subgroup.
 func (p *G1) Check() bool {
 	p.Normalize()
-	y2 := p.Y2FromX()
-	var ytest Fq
-	tp := *p
-	return ytest.Square(&p.y).Equal(&y2) && tp.ScalarMult(&R).IsZero()
-}
-
-func (p *G1) Y2FromX() (y2 Fq) {
-	y2.Square(&p.x)
-	y2.Mul(&y2,&p.x)
-	y2.Add(&y2, &Four)
-	return
+	y2 := new(Fq).Y2FromX(&p.X)
+	return new(Fq).Square(&p.Y).Equal(y2) && p.Copy().ScalarMult(&R).IsZero()
 }
 
 const (
 	G1Size             = 48
 	G1UncompressedSize = 2 * G1Size
-
-	// https://github.com/ebfull/pairing/tree/master/src/bls12_381#serialization
-	serializationMask       = (1 << 5) - 1
-	serializationCompressed = 1 << 7
-	serializationInfinity   = 1 << 6
-	serializationBigY       = 1 << 5
 )
 
+func (p *G1) String() string {
+	return fmt.Sprintf("bls12.G1(%x)", p.Marshal())
+}
+
+func (p *G1) Unmarshal(in []byte) []byte {
+	return unmarshalG(marshallerG(p), in)
+}
+
+func (p *G1) Marshal() []byte {
+	return marshalG(marshallerG(p), 1)
+}
+
+func (p *G1) MarshalUncompressed() []byte {
+	return marshalG(marshallerG(p), 2)
+}
+
+func (p *G1) getSize() int {
+	return G1Size
+}
+
+/*
 // Unmarshal a point on G1. It consumes either G1Size or
 // G1UncompressedSize, depending on how the point was marshalled.
-func (p *G1) Unmarshal(in []byte) []byte {
+func (p *G1) Unmarshal(in []byte) (res []byte) {
 	if len(in) < G1Size {
 		return nil
 	}
-	compressed := in[0]&serializationCompressed != 0
+	var bin [G1Size]byte
+	copy(bin[:], in)
+	flags := bin[0]
+	bin[0] &= serializationMask
+
+	compressed := flags&serializationCompressed != 0
 	inlen := G1UncompressedSize
 	if compressed {
 		inlen = G1Size
+		res = in[inlen:]
 	}
 	if !compressed && len(in) < G1UncompressedSize {
 		return nil
 	}
-	var bin [G1UncompressedSize + 1]byte
-	copy(bin[1:], in[:inlen])
-	bin[1] &= serializationMask
+
 
 	// Big Y, but we're not compressed, or infinity is serialized
-	if (in[0]&serializationBigY != 0) && (!compressed || (in[0]&serializationInfinity != 0)) {
+	if (flags&serializationBigY != 0) && (!compressed || (flags&serializationInfinity != 0)) {
 		return nil
 	}
 
-	if in[0]&serializationInfinity != 0 {
+	if flags&serializationInfinity != 0 {
 		// Check that rest is zero
-		for _, v := range bin[1 : inlen+1] {
+		for _, v := range in[1:inlen] {
 			if v != 0 {
 				return nil
 			}
 		}
-
-		C.ep_set_infty(p)
-		return in[inlen:]
+		p.SetZero()
+		return res
 	}
 
 	if compressed {
-		bin[0] = 2
-		C.ep_read_bin(p, (*C.uint8_t)(&bin[0]), G1Size+1)
-		var yneg C.fp_st
-
-		if negativeIsBigger(&yneg[0], &p.y[0]) != (in[0]&serializationBigY != 0) {
-			p.y = yneg
+		p.X.Unmarshal(bin[:])
+		if !p.Y.Y2FromX(&p.X).Sqrt(nil) {
+			return nil
 		}
-		return in[G1Size:]
+		p.Y.EnsureParity(flags&serializationBigY!=0)
+	} else {
+		p.Y.Unmarshal(in[G1Size:G1UncompressedSize])
 	}
-
-	bin[0] = 4
-	C.ep_read_bin(p, (*C.uint8_t)(&bin[0]), G1UncompressedSize+1)
-	return in[G1UncompressedSize:]
+	if !p.Check() {
+		return nil
+	}
+	return res
 }
 
 // Marshal the point, compressed to X and sign.
@@ -212,31 +164,24 @@ func (p *G1) Marshal() (res []byte) {
 		res[0] = serializationInfinity | serializationCompressed
 		return
 	}
-	C.ep_norm(p, p)
-	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1Size+1, p, 1)
+	p.Normalize()
+	res = p.X.Marshal()
 	res[0] |= serializationCompressed
 
-	var yneg C.fp_st
-	if negativeIsBigger(&yneg[0], &p.y[0]) {
+	if p.Y.Copy().EnsureParity(false) {
 		res[0] |= serializationBigY
 	}
 	return
 }
 
-func (p *G1) String() string {
-	x,y,_ := p.GetXYZ()
-	return fmt.Sprintf("bls12.G1(%d,%d)", x.ToInt(),y.ToInt())
-}
-
 // Marshal the point, as uncompressed XY.
 func (p *G1) MarshalUncompressed() (res []byte) {
-	var bin [G1UncompressedSize + 1]byte
-	res = bin[1:]
-
-	if C.ep_is_infty(p) == 1 {
-		res[0] |= serializationInfinity
-		return
+	if p.IsZero() {
+		var buf [G1UncompressedSize]byte
+		buf[0] = serializationInfinity
+		return buf[:]
 	}
-	C.ep_write_bin((*C.uint8_t)(&bin[0]), G1UncompressedSize+1, p, 0)
-	return
+	p.Normalize()
+	return append(p.X.Marshal(), p.Y.Marshal()...)
 }
+*/

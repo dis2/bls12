@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"testing"
-	"math/big"
-	"crypto/sha512"
 	"crypto/rand"
 )
 
@@ -39,62 +37,7 @@ func BenchmarkMultG1(b *testing.B) {
 }
 
 
-func TestSetZero(t *testing.T) {
-	new(G1).SetZero()
-}
-
-func TestSetOne(t *testing.T) {
-	new(G1).SetOne()
-}
-
-func TestHashToPointRelic(t *testing.T) {
-	for i := 0; i < 1000; i++ {
-		var p G1
-		var buf [512]byte
-
-		buf[0] = byte(i)
-		buf[1] = byte(i>>8)
-		buf[2] = byte(i>>16)
-		p.HashToPointRelic(buf[:])
-		if !p.Check() {
-			t.Fatalf("point landed in wrong subgroup for %d\n", i)
-		}
-	}
-
-	// Via relic (hardcoded sha384)
-	p1 := new(G1).HashToPointRelic([]byte("test2"))
-	if !p1.Check() {
-		t.Fatal("relic gave us wrong point?")
-	}
-
-	for i := 0; i < 1000; i++ {
-		var p G1
-		var buf [64]byte
-		buf[0] = byte(i)
-		buf[1] = byte(i>>8)
-		buf[2] = byte(i>>16)
-		sum := sha512.Sum384(buf[:])
-		sum[0] &= 0xf
-		var f Fq
-		f.Unmarshal(sum[0:48])
-		p.MapIntToPoint(&f)
-		if !p.Check() {
-			t.Fatal("point landed in wrong subgroup")
-		}
-	}
-
-	// Manually via custom hash
-	buf := sha512.Sum384([]byte("test2"))
-	x := new(big.Int).SetBytes(buf[:])
-	p2 := new(G1).MapIntToPoint(new(Fq).FromInt(x))
-	if !p1.Equal(p2) {
-		t.Fatal("misbehaving hashtopoint")
-	}
-
-
-}
-
-func TestHashToPointFouque(t *testing.T) {
+func TestHashToPoint(t *testing.T) {
 	var p G1
 	var buf [512]byte
 	for i := 0; i < 1000; i++ {
@@ -112,13 +55,13 @@ func TestVectorG1Compressed(t *testing.T) {
 	//	t.Run("Compressed", func(t *testing.T) {
 	var (
 		data = readFile(t, "testdata/g1_compressed_valid_test_vectors.dat")
-		ep   = (&G1{}).SetZero()
+		ep   = G1Zero()
 		a    = &G1{}
-		one  = (&G1{}).SetOne()
+		one  = G1One()
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		t.Logf("%d <- %x", i, d[:G1Size])
+		//t.Logf("%d <- %x", i, d[:G1Size])
 		ok := a.Unmarshal(d[:G1Size])
 		if ok == nil {
 			t.Errorf("%d: failed decoding", i)
@@ -127,7 +70,7 @@ func TestVectorG1Compressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep.Marshal()
-		t.Logf("%d -> %x", i, buf)
+		//t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G1Size]) {
 			t.Errorf("%d: different encoding", i)
 		}
@@ -138,16 +81,15 @@ func TestVectorG1Compressed(t *testing.T) {
 }
 func TestVectorG1Uncompressed(t *testing.T) {
 	//	t.Run("Uncompressed", func(t *testing.T) {
-	t.Logf("setup\n")
 	var (
 		data = readFile(t, "testdata/g1_uncompressed_valid_test_vectors.dat")
-		ep   = (&G1{}).SetZero()
+		ep   = G1Zero()
 		a    = &G1{}
-		one  = (&G1{}).SetOne()
+		one  = G1One()
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		t.Logf("%d <- %x", i, d[:G1UncompressedSize])
+		//t.Logf("%d <- %x", i, d[:G1UncompressedSize])
 		ok := a.Unmarshal(d[:G1UncompressedSize])
 		if ok == nil {
 			t.Errorf("%d: failed decoding",i)
@@ -156,7 +98,7 @@ func TestVectorG1Uncompressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep.MarshalUncompressed()
-		t.Logf("%d -> %x", i, buf)
+		//t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G1UncompressedSize]) {
 			t.Errorf("%d: different encoding", i)
 		}
