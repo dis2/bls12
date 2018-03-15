@@ -61,7 +61,7 @@ func TestVectorG1Compressed(t *testing.T) {
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		//t.Logf("%d <- %x", i, d[:G1Size])
+		t.Logf("%d <- %x", i, d[:G1Size])
 		ok := a.Unmarshal(d[:G1Size])
 		if ok == nil {
 			t.Errorf("%d: failed decoding", i)
@@ -70,7 +70,7 @@ func TestVectorG1Compressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep.Marshal()
-		//t.Logf("%d -> %x", i, buf)
+		t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G1Size]) {
 			t.Errorf("%d: different encoding", i)
 		}
@@ -89,7 +89,7 @@ func TestVectorG1Uncompressed(t *testing.T) {
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		//t.Logf("%d <- %x", i, d[:G1UncompressedSize])
+		t.Logf("%d <- %x", i, d[:G1UncompressedSize])
 		ok := a.Unmarshal(d[:G1UncompressedSize])
 		if ok == nil {
 			t.Errorf("%d: failed decoding",i)
@@ -98,7 +98,7 @@ func TestVectorG1Uncompressed(t *testing.T) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep.MarshalUncompressed()
-		//t.Logf("%d -> %x", i, buf)
+		t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G1UncompressedSize]) {
 			t.Errorf("%d: different encoding", i)
 		}

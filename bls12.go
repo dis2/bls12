@@ -54,9 +54,9 @@ func QConst(s string) (f Fq) {
 const (
 	// https://github.com/ebfull/pairing/tree/master/src/bls12_381#serialization
 	serializationMask       = (1 << 5) - 1
-	serializationCompressed = 1 << 7
-	serializationInfinity   = 1 << 6
-	serializationBigY       = 1 << 5
+	serializationCompressed = 1 << 7 // 0x80
+	serializationInfinity   = 1 << 6 // 0x40
+	serializationBigY       = 1 << 5 // 0x20
 )
 
 func unmarshalG(p marshallerG, in []byte) (res []byte) {
@@ -73,10 +73,10 @@ func unmarshalG(p marshallerG, in []byte) (res []byte) {
 	inlen := size*2
 	if compressed {
 		inlen = size
-		res = in[inlen:]
-	} else if len(in) < size*2 {
+	} else if len(in) < inlen {
 		return nil
 	}
+	res = in[inlen:]
 
 	// Big Y, but we're not compressed, or infinity is serialized
 	if (flags&serializationBigY != 0) && (!compressed || (flags&serializationInfinity != 0)) {
@@ -119,13 +119,16 @@ func marshalG(p marshallerG, comp int) (res []byte) {
 	if p.IsZero() {
 		res = make([]byte, p.getSize() * comp)
 		res[0] = serializationInfinity
-	} else {
-		res = X.Marshal()
+		if comp == 1 {
+			res[0] |= serializationCompressed
+		}
+		return
+	}
+	res = X.Marshal()
+	if comp == 1 {
 		if Y.Copy().EnsureParity(false) {
 			res[0] |= serializationBigY
 		}
-	}
-	if comp == 1 {
 		res[0] |= serializationCompressed
 	} else {
 		res = append(res, Y.Marshal()...)

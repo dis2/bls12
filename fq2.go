@@ -29,10 +29,11 @@ func (e *Fq2) Set(x Field) {
 // parity 1 - neg(x).C1 > x.C1
 // parity 0 - neg(x).C1 <= x.C1
 func (e *Fq2) CopyParity(y Field) Field {
-	var t Fq2
-	t.Neg(e)
-	if t.GreaterThan(y) {
-		*e = t
+	var nege, negy Fq2
+	nege.Neg(e)
+	negy.Neg(y)
+	if nege.GreaterThan(e) != negy.GreaterThan(y) {
+		*e = nege
 	}
 	return e
 }
@@ -47,20 +48,20 @@ func (e *Fq2) GreaterThan(y Field) bool {
 
 // Ensures parity p. It also returns the parity e had prior to this call.
 func (e *Fq2) EnsureParity(p bool) bool {
-	var t Fq2
-	t.Neg(e)
+	var nege Fq2
+	nege.Neg(e)
 	// The negative is larger
-	if e.GreaterThan(&t) {
+	if nege.GreaterThan(e) {
 		if p {
 			// And we want it set
-			*e = t
+			*e = nege
 		}
 		return false
 	// The negative is smaller
 	} else {
 		if !p {
 			// And we want it set
-			*e = t
+			*e = nege
 		}
 		return true
 	}
@@ -99,9 +100,10 @@ func (e *Fq2) SetInt64(n int64) Field {
 
 func (e *Fq2) Y2FromX(x Field) Field {
 	xx := *e.opt(x)
+	var tmp Fq2
 	e.Square(&xx)
 	e.Mul(e, &xx)
-	e.Add(e, e.Cast(&Four))
+	e.Add(e, tmp.Cast(&Four))
 	return e
 }
 
@@ -110,7 +112,7 @@ func (e *Fq2) Y2FromX(x Field) Field {
 // whatever is returned.
 func (tmp *Fq2) Cast(v *Fq) Field {
 	tmp.C[0] = *v
-	tmp.C[1] = Zero
+	tmp.C[1] = *v
 	return tmp
 }
 

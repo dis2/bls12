@@ -33,20 +33,20 @@ func (e *Fq) CopyParity(y Field) Field {
 
 // Ensures parity p. It also returns the parity e had prior to this call.
 func (e *Fq) EnsureParity(p bool) bool {
-	var t Fq
-	t.Neg(e)
+	var nege Fq
+	nege.Neg(e)
 	// The negative is larger
-	if e.GreaterThan(&t) {
+	if nege.GreaterThan(e) {
 		if p {
 			// And we want it set
-			*e = t
+			*e = nege
 		}
 		return false
 	// The negative is smaller
 	} else {
 		if !p {
 			// And we want it set
-			*e = t
+			*e = nege
 		}
 		return true
 	}

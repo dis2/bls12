@@ -48,16 +48,23 @@ func TestVectorG2Compressed(t *testing.T) {
 		d    = data
 	)
 	for i := 0; i < 1000; i++ {
-		//t.Logf("%d <- %x", i, d[:G2Size])
+		t.Logf("%d <- %x", i, d[:G2Size])
 		ok := a.Unmarshal(d[:G2Size])
 		if ok == nil {
 			t.Errorf("%d: failed decoding", i)
+		}
+		ep2.Normalize()
+		if !ep2.X.Equal(&a.X) {
+			t.Errorf("%d: different X", i)
+		}
+		if !ep2.Y.Equal(&a.Y) {
+			t.Errorf("%d: different Y", i)
 		}
 		if !ep2.Equal(a) {
 			t.Errorf("%d: different point", i)
 		}
 		buf := ep2.Marshal()
-		//t.Logf("%d -> %x", i, buf)
+		t.Logf("%d -> %x", i, buf)
 		if !bytes.Equal(buf, d[:G2Size]) {
 			t.Errorf("%d: different encoding", i)
 		}

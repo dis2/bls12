@@ -12,6 +12,7 @@ package bls12
 // void _fp_inv(fp_t c,fp_t a) { fp_inv(c,a); }
 // void _fp_exp(fp_t c,fp_t a,bn_t b) { fp_exp(c,a,b); }
 import "C"
+import "bytes"
 
 func (e *Fq) l() *Limb {
 	return &e.Limbs[0]
@@ -73,7 +74,10 @@ func (e *Fq) Equal(x Field) bool {
 
 // e > x
 func (e *Fq) GreaterThan(x Field) bool {
-	return C.fp_cmp(e.l(), x.l()) == C.CMP_GT
+	var buf1, buf2 [48]byte
+	C.fp_write_bin((*C.uint8_t)(&buf1[0]), 48, e.l())
+	C.fp_write_bin((*C.uint8_t)(&buf2[0]), 48, x.l())
+	return bytes.Compare(buf1[:],buf2[:]) == 1
 }
 
 // e = a * b
