@@ -47,28 +47,35 @@ func (p *G1) ScaleByCofactor() G {
 }
 
 // Hash to point
-func (p *G1) HashToPoint(msg []byte) G {
-	var h [48]byte
-	var t Fq
+func (p *G1) HashToPointFast(msg []byte) G {
 	state := sha3.NewShake256()
 	state.Write([]byte("BLS12-381 G1"))
 	state.Write(msg)
+
+	var t Fq
+	h := t.Buf()
 	state.Read(h[:])
+
 	// trim to 380 bits
-	h[0] &= 0x0f
-	t.Unmarshal(h[:])
-	x, y := FouqueMapXtoY(&t)
-	p.SetXY(x, y)
+	h[47] &= 0x0f
+	toEndian(h)
+	FouqueMapXtoY(&t,&p.X,&p.Y)
+	// match parity of y with t
+	if t.Limbs[0]&1 != p.Y.Limbs[0]&1 {
+		p.Y.Neg(&p.Y)
+	}
+	p.SetNormalized()
 	p.ScaleByCofactor()
 	return p
 }
 
 // Map arbitrary integer to a point, for use with custom hash function.
-func (p *G1) MapIntToPoint(in Field) G {
-	x, y := MapXtoY(in.(*Fq))
-	p.SetXY(x, y)
-	p.ScaleByCofactor()
-	return p
+func (p *G1) MapIntToPoint(in Field) bool {
+	if MapXtoY(in.(*Fq), &p.X, &p.Y) {
+		p.ScaleByCofactor()
+		return true
+	}
+	return false
 }
 
 // Check that the point is on the curve and in correct subgroup.

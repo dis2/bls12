@@ -13,8 +13,9 @@ type G interface {
 	SetXY(x, y Field) G
 	SetNormalized() G
 	ScaleByCofactor() G
-	HashToPoint(msg []byte) G
-	MapIntToPoint(Field) G
+	HashToPoint(msg, non []byte) bool
+	HashToPointFast(msg []byte) G
+	MapIntToPoint(Field) bool
 	GetSize() int
 	GetXYZ() (x, y, z Field)
 	Check() bool
@@ -31,6 +32,15 @@ type G interface {
 func hexConst(s string) (ret *big.Int) {
 	ret, _ = new(big.Int).SetString(s, 16)
 	return
+}
+
+func hexBytes(s string) []byte {
+	var buf [48]byte
+	_, err := hex.Decode(buf[:], []byte(s))
+	if err != nil {
+		panic("bad hex bytes constant " + s)
+	}
+	return buf[:]
 }
 
 func QConst(s string) (f Fq) {

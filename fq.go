@@ -132,3 +132,8 @@ func (e *Fq) ToInt() (res []*big.Int) {
 func (e *Fq) String() string {
 	return fmt.Sprintf("Fq(%d)", e.ToInt())
 }
+
+func (e *Fq) IsResidue() bool {
+	return new(Fq).Mul(e, &QMinus1Half).Equal(&One)
+}
+

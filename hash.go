@@ -1,6 +1,4 @@
 package bls12
-
-//import "fmt"
 // Explicit formulas only.
 
 // Fancy hash:
@@ -9,8 +7,8 @@ package bls12
 //
 // This computes only the raw mapping in a random subgroup. Scaling by cofactor
 // and setting parity of y according to t is responsibility of the caller.
-func FouqueMapXtoY(t Field) (x, y Field) {
-	x, y = t.New(), t.New()
+// input: t, output: x,y
+func FouqueMapXtoY(t, x, y Field) {
 	w, y2, c := t.Copy(), t.New(), t.New()
 	// w = (t^2 + 4u + 1)^(-1) * sqrt(-3) * t
 	//if t.IsZero() { panic("degenerate t=0") }
@@ -43,7 +41,7 @@ func FouqueMapXtoY(t Field) (x, y Field) {
 		y2.Add(y2, c.GetB())
 		// y = sqrt(y2)
 		if y.Sqrt(y2) {
-			return x, y
+			return
 		}
 	}
 	panic("Uh oh.")
@@ -52,18 +50,23 @@ func FouqueMapXtoY(t Field) (x, y Field) {
 // Simple map (RELIC): Bump x until y satisfies curve equation.
 // This computes only the raw mapping in a random subgroup. Scaling by cofactor
 // and setting parity of y according to t is responsibility of the caller.
-func MapXtoY(t Field) (x, y Field) {
-	x, y = t.Copy(), t.New()
+// input: t, output: x,y
+func MapXtoY(t, x, y Field) bool {
 	y2, c := t.New(), t.New()
-	for {
+	x.Set(t)
+	// There is no bound, make up arbitrary one
+	for i:=0; i < 1000; i++ {
 		// y2 = y^2 = x^3 + 4
 		y2.Square(x)
 		y2.Mul(y2, x)
 		y2.Add(y2, c.GetB()) // 4u
 
 		if y.Sqrt(y2) {
-			return
+			return true
 		}
 		x.Add(x, c.Cast(&One))
 	}
+	return false
 }
+
+

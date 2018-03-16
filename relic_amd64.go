@@ -6,5 +6,6 @@ package bls12
 import "C"
 
 const NLimbs = 6
+const LimbSize = 8
 
 type Limb = C.dig_t

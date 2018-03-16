@@ -13,13 +13,17 @@ package bls12
 // void _fp_exp(fp_t c,fp_t a,bn_t b) { fp_exp(c,a,b); }
 import "C"
 import "bytes"
+import "unsafe"
 
 type Limbs [NLimbs]Limb
-
+type FqBuf = [48]byte
 type Fq struct {
 	Limbs
 }
 
+func (e *Fq) Buf() *FqBuf {
+	return (*FqBuf)(unsafe.Pointer(&e.Limbs[0]))
+}
 
 func (e *Fq) l() *Limb {
 	return &e.Limbs[0]

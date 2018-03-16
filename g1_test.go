@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkUncompressG1(b *testing.B) {
-	p1 := new(G1).HashToPoint([]byte("test2"))
+	p1 := new(G1).HashToPointFast([]byte("test2"))
 	b.ResetTimer()
 	m := p1.Marshal()
 	for i := 0; i < b.N; i++ {
@@ -29,7 +29,7 @@ func BenchmarkBaseMultG1(b *testing.B) {
 func BenchmarkMultG1(b *testing.B) {
 	x, _ := rand.Int(rand.Reader, Order)
 	s := new(Scalar).FromInt(x)
-	g1 := new(G2).HashToPoint([]byte("yxxx"))
+	g1 := new(G2).HashToPointFast([]byte("yxxx"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		g1.ScalarMult(s)
@@ -43,9 +43,21 @@ func BenchmarkHashToPointG1(b *testing.B) {
 		buf[0] = byte(i)
 		buf[1] = byte(i >> 8)
 		buf[2] = byte(i >> 16)
-		g1.HashToPoint(buf[:])
+		g1.HashToPoint(buf[:], buf[:])
 	}
 }
+
+func BenchmarkHashToPointFastG1(b *testing.B) {
+	var buf [512]byte
+	var g1 G1
+	for i := 0; i < b.N; i++ {
+		buf[0] = byte(i)
+		buf[1] = byte(i >> 8)
+		buf[2] = byte(i >> 16)
+		g1.HashToPointFast(buf[:])
+	}
+}
+
 func BenchmarkHashToPointRelicG1(b *testing.B) {
 	var buf [512]byte
 	var g1 G1
@@ -58,19 +70,34 @@ func BenchmarkHashToPointRelicG1(b *testing.B) {
 }
 
 
-func TestHashToPoint(t *testing.T) {
+func TestHashToPointG1(t *testing.T) {
 	var p G1
 	var buf [512]byte
 	for i := 0; i < 1000; i++ {
 		buf[0] = byte(i)
 		buf[1] = byte(i >> 8)
 		buf[2] = byte(i >> 16)
-		p.HashToPoint(buf[:])
+		p.HashToPoint(buf[:],buf[:])
 		if !p.Check() {
 			t.Fatalf("point landed in wrong subgroup for %d\n", i)
 		}
 	}
 }
+
+func TestHashToPointFastG1(t *testing.T) {
+	var p G1
+	var buf [512]byte
+	for i := 0; i < 1000; i++ {
+		buf[0] = byte(i)
+		buf[1] = byte(i >> 8)
+		buf[2] = byte(i >> 16)
+		p.HashToPointFast(buf[:])
+		if !p.Check() {
+			t.Fatalf("point landed in wrong subgroup for %d\n", i)
+		}
+	}
+}
+
 
 func TestVectorG1Compressed(t *testing.T) {
 	//	t.Run("Compressed", func(t *testing.T) {

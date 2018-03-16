@@ -143,3 +143,11 @@ func (e *Fq2) FromInt(i []*big.Int) Field {
 func (e *Fq2) ToInt() []*big.Int {
 	return append(e.C[0].ToInt(), e.C[1].ToInt()[0])
 }
+
+func (e *Fq2) IsResidue() bool {
+	var t0, t1 Fq
+	t0.Square(&e.C[0])
+	t1.Square(&e.C[1])
+	return t0.Add(nil,&t1).Mul(nil, &QMinus1Half).Equal(&One)
+}
+

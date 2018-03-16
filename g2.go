@@ -39,29 +39,37 @@ func (p *G2) GetXYZ() (x, y, z Field) {
 }
 
 // HashToPoint the message.
-func (p *G2) HashToPoint(msg []byte) G {
+func (p *G2) HashToPointFast(msg []byte) G {
 	state := sha3.NewShake256()
 	state.Write([]byte("BLS12-381 G2"))
 	state.Write(msg)
 
 	var t Fq2
-	var h [96]byte
+	h0 := t.C[0].Buf()
+	h1 := t.C[1].Buf()
+	state.Read(h0[:])
+	state.Read(h1[:])
 	// Trim to 380 bits.
-	state.Read(h[:])
-	h[0] &= 0x0f
-	h[48] &= 0x0f
-	t.C[1].Unmarshal(t.C[0].Unmarshal(h[:]))
-	x, y := FouqueMapXtoY(&t)
-	p.SetXY(x, y)
+	h0[47] &= 0x0f
+	h1[47] &= 0x0f
+	toEndian(h0)
+	toEndian(h1)
+	FouqueMapXtoY(&t, &p.X, &p.Y)
+	// match parity of y with t
+	if t.C[0].Limbs[0]&1 != p.Y.C[0].Limbs[0]&1 {
+		p.Y.Neg(&p.Y)
+	}
+	p.SetNormalized()
 	p.ScaleByCofactorFast()
 	return p
 }
 
-func (p *G2) MapIntToPoint(in Field) G {
-	x, y := MapXtoY(in.(*Fq2))
-	p.SetXY(x, y)
-	p.ScaleByCofactorFast()
-	return p
+func (p *G2) MapIntToPoint(in Field) bool {
+	if MapXtoY(in.(*Fq2), &p.X, &p.Y) {
+		p.ScaleByCofactorFast()
+		return true
+	}
+	return false
 }
 
 const (

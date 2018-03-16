@@ -44,8 +44,8 @@ func TestMarshalGT(t *testing.T) {
 }
 
 func BenchmarkPairGT(b *testing.B) {
-	g1 := new(G1).HashToPoint([]byte("x"))
-	g2 := new(G2).HashToPoint([]byte("x"))
+	g1 := new(G1).HashToPointFast([]byte("x"))
+	g2 := new(G2).HashToPointFast([]byte("x"))
 	e := GT{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
