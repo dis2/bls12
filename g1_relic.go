@@ -67,6 +67,11 @@ func (p *G1) Add(q G) G {
 	return p
 }
 
+func (p *G1) HashToPointRelic(msg []byte) G {
+	C.ep_map(p.l(), (*C.uint8_t)(&msg[0]), C.int(len(msg)))
+	return p
+}
+
 // Check if points are the same. This is needed when the points are not
 // in normalized form - there's an algebraic trick in relic to do the comparison
 // faster than normalizing first. If you're sure the points are normalized, it's

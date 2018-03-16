@@ -25,6 +25,29 @@ func BenchmarkMultG2(b *testing.B) {
 	}
 }
 
+func BenchmarkHashToPointG2(b *testing.B) {
+	var buf [512]byte
+	var g2 G2
+	for i := 0; i < b.N; i++ {
+		buf[0] = byte(i)
+		buf[1] = byte(i >> 8)
+		buf[2] = byte(i >> 16)
+		g2.HashToPoint(buf[:])
+	}
+}
+
+func BenchmarkHashToPointRelicG2(b *testing.B) {
+	var buf [512]byte
+	var g2 G2
+	for i := 0; i < b.N; i++ {
+		buf[0] = byte(i)
+		buf[1] = byte(i >> 8)
+		buf[2] = byte(i >> 16)
+		g2.HashToPointRelic(buf[:])
+	}
+}
+
+
 func TestHashToPointG2(t *testing.T) {
 	var p G2
 	var buf [512]byte
