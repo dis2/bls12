@@ -91,13 +91,6 @@ func (e *Fq) Mul(a, b Field) Field {
 	return e
 }
 
-// e = x^3
-func (e *Fq) Cube(x Field) Field {
-	e.Square(x)
-	e.Mul(e, x)
-	return e
-}
-
 // e = 64 bit immediate n
 func (e *Fq) SetInt64(n int64) Field {
 	C.fp_set_dig(e.l(), Limb(n))

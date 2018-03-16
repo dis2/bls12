@@ -75,11 +75,19 @@ func (e *Fq) IsZero() bool {
 	return e.Equal(&Zero)
 }
 
-func (e *Fq) Sqrt(a Field) bool {
-	aa := e.opt(a)
+// e = x^-1
+func (e *Fq) Sqrt(x Field) bool {
+	aa := e.opt(x)
 	chk := *aa
-	e.Exp(a, &QPlus1Quarter)
+	e.Exp(aa, &QPlus1Quarter)
 	return chk.Equal(e.Copy().Square(nil))
+}
+
+// e = x^3
+func (e *Fq) Cube(x Field) Field {
+	e.Square(x)
+	e.Mul(e, x)
+	return e
 }
 
 func (e *Fq) Y2FromX(x Field) Field {
