@@ -104,15 +104,27 @@ func pad(buf []byte) []byte {
 	return append(make([]byte, 48-n), buf...)
 }
 
-func (e *Fq) FromInt(b *big.Int) *Fq {
-	if e.Unmarshal(pad(b.Bytes())) == nil {
+func FqFromInt(b *big.Int) (ret *Fq) {
+	ret = new(Fq)
+	if ret.Unmarshal(pad(b.Bytes())) == nil {
 		return nil
 	}
+	return
+}
+
+func (e *Fq) FromInt(b []*big.Int) Field {
+	t := FqFromInt(b[0])
+	if t == nil {
+		return t
+	}
+	*e = *t
 	return e
 }
 
-func (e *Fq) ToInt() *big.Int {
-	return new(big.Int).SetBytes(e.Marshal())
+func (e *Fq) ToInt() (res []*big.Int) {
+	var b [1]*big.Int
+	b[0] = new(big.Int).SetBytes(e.Marshal())
+	return b[:]
 }
 
 func (e *Fq) String() string {

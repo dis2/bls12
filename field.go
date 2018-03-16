@@ -1,5 +1,7 @@
 package bls12
 
+import "math/big"
+
 // Abstract algebraic field for Fq (G1 coords), Fq2 (G2 coords) and Fq12 (GT)
 type Field interface {
 	Exp(a Field, n *Scalar) Field
@@ -24,4 +26,6 @@ type Field interface {
 	Set(Field)
 	New() Field
 	GetB() Field
+	ToInt() []*big.Int
+	FromInt([]*big.Int) Field
 }

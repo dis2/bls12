@@ -28,9 +28,8 @@ func (p *G1) SetZero() {
 }
 
 // p = G1(G)
-func (p *G1) SetOne() *G1 {
+func (p *G1) SetOne() {
 	C.ep_curve_get_gen(p.l())
-	return p
 }
 
 // Create new element set to infinity.

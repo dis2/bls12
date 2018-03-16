@@ -1,5 +1,7 @@
 package bls12
 
+import "math/big"
+
 // Fq holds C0, C1, where C1 * u + C0 is the coordinate
 type Fq2 struct {
 	C [2]Fq
@@ -130,4 +132,14 @@ func (e *Fq2) Unmarshal(b []byte) []byte {
 
 func (e *Fq2) Marshal() []byte {
 	return append(e.C[1].Marshal(), e.C[0].Marshal()...)
+}
+
+func (e *Fq2) FromInt(i []*big.Int) Field {
+	e.C[0].FromInt(i[0:1])
+	e.C[1].FromInt(i[1:2])
+	return e
+}
+
+func (e *Fq2) ToInt() []*big.Int {
+	return append(e.C[0].ToInt(), e.C[1].ToInt()[0])
 }

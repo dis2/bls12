@@ -141,6 +141,7 @@ type marshallerG interface {
 	GetXYZ() (x, y, z Field)
 	Check() bool
 	SetZero()
+	SetOne()
 	Normalize()
 	SetNormalized()
 	IsZero() bool
