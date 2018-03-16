@@ -30,6 +30,7 @@ func (e *Fq) HashRef(key, nonce []byte) bool {
 	return false
 }
 
+// Hash to point with (currently proposed) rust ref impl.
 func (p *G1) HashToPoint(key, non []byte) bool {
 	var np[2] G1
 	var t[2] Fq
@@ -60,6 +61,7 @@ func (p *G1) HashToPoint(key, non []byte) bool {
 	return true
 }
 
+// Hash to point with (currently proposed) rust ref impl.
 func (p *G2) HashToPoint(key, non []byte) bool {
 	var np[2] G2
 	var t[2] Fq2

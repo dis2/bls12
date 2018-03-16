@@ -46,19 +46,24 @@ func (p *G1) ScaleByCofactor() G {
 	return p
 }
 
-// Hash to point
+// Hash to point (uses SHA3), reasonably fast.
 func (p *G1) HashToPointFast(msg []byte) G {
 	state := sha3.NewShake256()
-	state.Write([]byte("BLS12-381 G1"))
 	state.Write(msg)
+	state.Write([]byte("BLS12-381 G1"))
+	var buf [G1Size]byte
+	state.Read(buf[:])
+	return p.HashToPointBytes(&buf)
+}
 
+// Hash to point using custom 48 bytes of hash.
+// This input MUST be uniformly random output of a secure hash function!
+// The function can mutate the passed buffer.
+func (p *G1) HashToPointBytes(buf *[G1Size]byte) G {
+	// Trim to 380bits
+	buf[0] &= 0xf
 	var t Fq
-	h := t.Buf()
-	state.Read(h[:])
-
-	// trim to 380 bits
-	h[47] &= 0x0f
-	toEndian(h)
+	t.Unmarshal(buf[:])
 	FouqueMapXtoY(&t,&p.X,&p.Y)
 	// match parity of y with t
 	if t.Limbs[0]&1 != p.Y.Limbs[0]&1 {

@@ -38,22 +38,26 @@ func (p *G2) GetXYZ() (x, y, z Field) {
 	return &p.X, &p.Y, &p.Z
 }
 
-// HashToPoint the message.
+// Hash to point (uses SHA3), reasonably fast.
 func (p *G2) HashToPointFast(msg []byte) G {
 	state := sha3.NewShake256()
-	state.Write([]byte("BLS12-381 G2"))
 	state.Write(msg)
+	state.Write([]byte("BLS12-381 G2"))
+	var buf [G2Size]byte
+	state.Read(buf[:])
+	return p.HashToPointBytes(&buf)
+}
 
+// Hash to point using custom 96 bytes of hash.
+// This input MUST be uniformly random output of a secure hash function!
+// The function can mutate the passed buffer.
+func (p *G2) HashToPointBytes(buf *[G2Size]byte) G {
+	// Trim both c0 and c1 to 380bits
+	buf[0] &= 0xf
+	buf[48] &= 0xf
 	var t Fq2
-	h0 := t.C[0].Buf()
-	h1 := t.C[1].Buf()
-	state.Read(h0[:])
-	state.Read(h1[:])
-	// Trim to 380 bits.
-	h0[47] &= 0x0f
-	h1[47] &= 0x0f
-	toEndian(h0)
-	toEndian(h1)
+	t.Unmarshal(buf[:])
+
 	FouqueMapXtoY(&t, &p.X, &p.Y)
 	// match parity of y with t
 	if t.C[0].Limbs[0]&1 != p.Y.C[0].Limbs[0]&1 {
