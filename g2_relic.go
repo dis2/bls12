@@ -34,9 +34,9 @@ func (p *G2) l() *C.ep2_st {
 }
 
 // p = G2(inf)
-func (p *G2) SetZero() {
+func (p *G2) SetZero() G {
 	C.ep2_set_infty(p.l())
-	return
+	return p
 }
 
 // Create new element set to infinity.
@@ -54,41 +54,44 @@ func G2One() (res *G2) {
 }
 
 // p = G2(G)
-func (p *G2) SetOne() {
+func (p *G2) SetOne() G {
 	C.ep2_curve_get_gen(p.l())
+	return p
 }
 
 // p = G2_h * G2(p)
-func (p *G2) ScaleByCofactor() {
+func (p *G2) ScaleByCofactor() G {
 	C.ep2_scale_by_cofactor(p.l())
+	return p
 }
 
 // p = s * G2(p)
-func (p *G2) ScalarMult(s *Scalar) *G2 {
+func (p *G2) ScalarMult(s *Scalar) G {
 	C._ep2_mul(p.l(), p.l(), s)
 	return p
 }
 
 // p = s * G2(G)
-func (p *G2) ScalarBaseMult(s *Scalar) *G2 {
+func (p *G2) ScalarBaseMult(s *Scalar) G {
 	C._ep2_mul(p.l(), G2One().l(), s)
 	return p
 }
 
 // p = p + q
-func (p *G2) Add(q *G2) *G2 {
-	C._ep2_add(p.l(), p.l(), q.l())
+func (p *G2) Add(q G) G {
+	C._ep2_add(p.l(), p.l(), q.(*G2).l())
 	return p
 }
 
 // Normalize the point into affine coordinates.
-func (p *G2) Normalize() {
+func (p *G2) Normalize() G {
 	C.ep2_norm(p.l(), p.l())
+	return p
 }
 
 // p == q
-func (p *G2) Equal(q *G2) bool {
-	return C.ep2_cmp(p.l(), q.l()) == C.CMP_EQ
+func (p *G2) Equal(q G) bool {
+	return C.ep2_cmp(p.l(), q.(*G2).l()) == C.CMP_EQ
 }
 
 // p == G2(inf)

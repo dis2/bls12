@@ -12,22 +12,24 @@ type G2 struct {
 	Norm    bool
 }
 
-func (p *G2) Copy() *G2 {
+func (p *G2) Copy() G {
 	c := *p
 	return &c
 }
 
 // Set affine coordinates X,Y with implicit Z=1
-func (p *G2) SetXY(x, y Field) {
+func (p *G2) SetXY(x, y Field) G {
 	p.X = *x.(*Fq2)
 	p.Y = *y.(*Fq2)
 	p.SetNormalized()
+	return p
 }
 
 // Make the point explicitly normalized (ie after manually editing X/Y)
-func (p *G2) SetNormalized() {
+func (p *G2) SetNormalized() G {
 	p.Z.C[1], p.Z.C[0] = Zero, One
 	p.Norm = true
+	return p
 }
 
 // Get interface pointers to XYZ coordinates.
@@ -37,7 +39,7 @@ func (p *G2) GetXYZ() (x, y, z Field) {
 }
 
 // HashToPoint the message.
-func (p *G2) HashToPoint(msg []byte) *G2 {
+func (p *G2) HashToPoint(msg []byte) G {
 	state := sha3.NewShake256()
 	state.Write([]byte("BLS12-381 G2"))
 	state.Write(msg)
@@ -55,8 +57,8 @@ func (p *G2) HashToPoint(msg []byte) *G2 {
 	return p
 }
 
-func (p *G2) MapIntToPoint(in *Fq2) *G2 {
-	x, y := MapXtoY(in)
+func (p *G2) MapIntToPoint(in Field) G {
+	x, y := MapXtoY(in.(*Fq2))
 	p.SetXY(x, y)
 	p.ScaleByCofactor()
 	return p
@@ -78,19 +80,22 @@ func (p *G2) String() string {
 	return fmt.Sprintf("bls12.G2(%x)", p.Marshal())
 }
 
+// Unmarshal point from input slice, returns unconsumed remainder of the slice
+// (depends on compression flag).
 func (p *G2) Unmarshal(in []byte) []byte {
-	return unmarshalG(marshallerG(p), in)
+	return GUnmarshal(p, in)
 }
 
 func (p *G2) Marshal() []byte {
-	return marshalG(marshallerG(p), 1)
+	return GMarshal(p, 1)
 }
 
 func (p *G2) MarshalUncompressed() []byte {
-	return marshalG(marshallerG(p), 2)
+	return GMarshal(p, 2)
 }
 
-func (p *G2) getSize() int {
+// Get (compressed) size, uncompressed is twice that. For interfaces.
+func (p *G2) GetSize() int {
 	return G2Size
 }
 

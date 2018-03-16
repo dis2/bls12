@@ -12,24 +12,26 @@ type G1 struct {
 	Norm    bool
 }
 
-func (p *G1) Copy() *G1 {
+func (p *G1) Copy() G {
 	c := *p
 	return &c
 }
 
 // Set affine coordinates X,Y with implicit Z=1
-func (p *G1) SetXY(x, y Field) {
+func (p *G1) SetXY(x, y Field) G {
 	p.X = *x.(*Fq)
 	p.Y = *y.(*Fq)
 
 	// Implicitly normalized
 	p.SetNormalized()
+	return p
 }
 
 // Make the point explicitly normalized (ie after manually editing X/Y)
-func (p *G1) SetNormalized() {
+func (p *G1) SetNormalized() G {
 	p.Z = One
 	p.Norm = true
+	return p
 }
 
 // Get a copy of coordinates of the element.
@@ -39,12 +41,13 @@ func (p *G1) GetXYZ() (x, y, z Field) {
 }
 
 // p = G1_h * G1(p)
-func (p *G1) ScaleByCofactor() {
+func (p *G1) ScaleByCofactor() G {
 	p.ScalarMult(&G1_h)
+	return p
 }
 
 // Hash to point
-func (p *G1) HashToPoint(msg []byte) *G1 {
+func (p *G1) HashToPoint(msg []byte) G {
 	var h [48]byte
 	var t Fq
 	state := sha3.NewShake256()
@@ -61,8 +64,8 @@ func (p *G1) HashToPoint(msg []byte) *G1 {
 }
 
 // Map arbitrary integer to a point, for use with custom hash function.
-func (p *G1) MapIntToPoint(in *Fq) *G1 {
-	x, y := MapXtoY(in)
+func (p *G1) MapIntToPoint(in Field) G {
+	x, y := MapXtoY(in.(*Fq))
 	p.SetXY(x, y)
 	p.ScaleByCofactor()
 	return p
@@ -84,19 +87,22 @@ func (p *G1) String() string {
 	return fmt.Sprintf("bls12.G1(%x)", p.Marshal())
 }
 
+// Unmarshal point from input slice, returns unconsumed remainder of the slice
+// (depends on compression flag).
 func (p *G1) Unmarshal(in []byte) []byte {
-	return unmarshalG(marshallerG(p), in)
+	return GUnmarshal(p, in)
 }
 
 func (p *G1) Marshal() []byte {
-	return marshalG(marshallerG(p), 1)
+	return GMarshal(p, 1)
 }
 
 func (p *G1) MarshalUncompressed() []byte {
-	return marshalG(marshallerG(p), 2)
+	return GMarshal(p, 2)
 }
 
-func (p *G1) getSize() int {
+// Get (compressed) size, uncompressed is twice that. For interfaces.
+func (p *G1) GetSize() int {
 	return G1Size
 }
 

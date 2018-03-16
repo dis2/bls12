@@ -4,6 +4,30 @@ package bls12 // import "github.com/dis2/bls12"
 import "math/big"
 import "encoding/hex"
 
+// G1/G2 interface, but not for GT.
+type G interface {
+	Copy() G
+	Add(q G) G
+	ScalarMult(s *Scalar) G
+	ScalarBaseMult(s *Scalar) G
+	SetXY(x, y Field) G
+	SetNormalized() G
+	ScaleByCofactor() G
+	HashToPoint(msg []byte) G
+	MapIntToPoint(Field) G
+	GetSize() int
+	GetXYZ() (x, y, z Field)
+	Check() bool
+	SetZero() G
+	SetOne() G
+	Normalize() G
+	IsZero() bool
+	String() string
+	Marshal() []byte
+	MarshalUncompressed() []byte
+	Unmarshal(in []byte) []byte
+}
+
 func hexConst(s string) (ret *big.Int) {
 	ret, _ = new(big.Int).SetString(s, 16)
 	return
@@ -31,8 +55,9 @@ const (
 	serializationBigY       = 1 << 5 // 0x20
 )
 
-func unmarshalG(p marshallerG, in []byte) (res []byte) {
-	size := p.getSize()
+// Unmarshal G1 or G2 point.
+func GUnmarshal(p G, in []byte) (res []byte) {
+	size := p.GetSize()
 	if len(in) < size {
 		return nil
 	}
@@ -84,12 +109,12 @@ func unmarshalG(p marshallerG, in []byte) (res []byte) {
 
 }
 
-// Marshal the point, compressed to X and sign.
-func marshalG(p marshallerG, comp int) (res []byte) {
+// Marshal either G1 or G2, comp=1 compressed, comp=2 uncompressed.
+func GMarshal(p G, comp int) (res []byte) {
 	p.Normalize()
 	X, Y, _ := p.GetXYZ()
 	if p.IsZero() {
-		res = make([]byte, p.getSize()*comp)
+		res = make([]byte, p.GetSize()*comp)
 		res[0] = serializationInfinity
 		if comp == 1 {
 			res[0] |= serializationCompressed
@@ -108,13 +133,4 @@ func marshalG(p marshallerG, comp int) (res []byte) {
 	return
 }
 
-type marshallerG interface {
-	getSize() int
-	GetXYZ() (x, y, z Field)
-	Check() bool
-	SetZero()
-	SetOne()
-	Normalize()
-	SetNormalized()
-	IsZero() bool
-}
+

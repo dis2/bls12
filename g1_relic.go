@@ -18,18 +18,21 @@ func (p *G1) l() *C.ep_st {
 }
 
 // Normalize the point into affine coordinates.
-func (p *G1) Normalize() {
+func (p *G1) Normalize() G {
 	C.ep_norm(p.l(), p.l())
+	return p
 }
 
 // p = G1(inf)
-func (p *G1) SetZero() {
+func (p *G1) SetZero() G {
 	C.ep_set_infty(p.l())
+	return p
 }
 
 // p = G1(G)
-func (p *G1) SetOne() {
+func (p *G1) SetOne() G {
 	C.ep_curve_get_gen(p.l())
+	return p
 }
 
 // Create new element set to infinity.
@@ -47,20 +50,20 @@ func G1One() (res *G1) {
 }
 
 // p = s * G1(p)
-func (p *G1) ScalarMult(s *Scalar) *G1 {
+func (p *G1) ScalarMult(s *Scalar) G {
 	C._ep_mul(p.l(), p.l(), s)
 	return p
 }
 
 // p = s * G1(G)
-func (p *G1) ScalarBaseMult(s *Scalar) *G1 {
+func (p *G1) ScalarBaseMult(s *Scalar) G {
 	C.ep_mul_gen(p.l(), s)
 	return p
 }
 
 // p = p + q
-func (p *G1) Add(q *G1) *G1 {
-	C._ep_add(p.l(), p.l(), q.l())
+func (p *G1) Add(q G) G {
+	C._ep_add(p.l(), p.l(), q.(*G1).l())
 	return p
 }
 
@@ -68,8 +71,8 @@ func (p *G1) Add(q *G1) *G1 {
 // in normalized form - there's an algebraic trick in relic to do the comparison
 // faster than normalizing first. If you're sure the points are normalized, it's
 // possible to compare directly with ==.
-func (p *G1) Equal(q *G1) bool {
-	return C.ep_cmp(p.l(), q.l()) == C.CMP_EQ
+func (p *G1) Equal(q G) bool {
+	return C.ep_cmp(p.l(), q.(*G1).l()) == C.CMP_EQ
 }
 
 // p == G1(inf)
