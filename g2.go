@@ -47,9 +47,9 @@ func (p *G2) HashToPoint(msg []byte) G {
 	var t Fq2
 	var h [96]byte
 	// Trim to 380 bits.
+	state.Read(h[:])
 	h[0] &= 0x0f
 	h[48] &= 0x0f
-	state.Read(h[:])
 	t.C[1].Unmarshal(t.C[0].Unmarshal(h[:]))
 	x, y := FouqueMapXtoY(&t)
 	p.SetXY(x, y)
