@@ -136,4 +136,3 @@ func (e *Fq) String() string {
 func (e *Fq) IsResidue() bool {
 	return new(Fq).Mul(e, &QMinus1Half).Equal(&One)
 }
-

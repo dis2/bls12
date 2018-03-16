@@ -92,7 +92,6 @@ func (p *G2) HashToPointRelic(msg []byte) G {
 	return p
 }
 
-
 // Normalize the point into affine coordinates.
 func (p *G2) Normalize() G {
 	C.ep2_norm(p.l(), p.l())

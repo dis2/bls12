@@ -8,7 +8,7 @@ import "bytes"
 // roughly Fq::hash in rust
 func (e *Fq) HashRef(key, nonce []byte) bool {
 	// There is no bound, so we introduce arbitrary one
-	for i := uint32(1); i < (1<<16); i++ {
+	for i := uint32(1); i < (1 << 16); i++ {
 		h, err := blake2b.New384(key)
 		if err != nil {
 			return false
@@ -32,13 +32,13 @@ func (e *Fq) HashRef(key, nonce []byte) bool {
 
 // Hash to point with (currently proposed) rust ref impl.
 func (p *G1) HashToPoint(key, non []byte) bool {
-	var np[2] G1
-	var t[2] Fq
+	var np [2]G1
+	var t [2]Fq
 	var msg [64]byte
 	var nonce [33]byte
 
 	// Rust silently truncates keys to 64 bytes, so do we.
-	copy(msg[:],key)
+	copy(msg[:], key)
 
 	if non != nil {
 		copy(nonce[:], non)
@@ -49,7 +49,7 @@ func (p *G1) HashToPoint(key, non []byte) bool {
 		if !t[i].HashRef(msg[:], nonce[:]) {
 			return false
 		}
-		FouqueMapXtoY(&t[i],&np[i].X,&np[i].Y)
+		FouqueMapXtoY(&t[i], &np[i].X, &np[i].Y)
 		if !t[i].IsResidue() {
 			np[i].Y.Neg(nil)
 		}
@@ -63,8 +63,8 @@ func (p *G1) HashToPoint(key, non []byte) bool {
 
 // Hash to point with (currently proposed) rust ref impl.
 func (p *G2) HashToPoint(key, non []byte) bool {
-	var np[2] G2
-	var t[2] Fq2
+	var np [2]G2
+	var t [2]Fq2
 	var msg [64]byte
 	var nonce [33]byte
 
@@ -84,7 +84,7 @@ func (p *G2) HashToPoint(key, non []byte) bool {
 		if !t[i].C[1].HashRef(msg[:], nonce[len(nonce)/2:]) {
 			return false
 		}
-		FouqueMapXtoY(&t[i],&np[i].X,&np[i].Y)
+		FouqueMapXtoY(&t[i], &np[i].X, &np[i].Y)
 		if !t[i].IsResidue() {
 			np[i].Y.Neg(nil)
 		}
@@ -95,5 +95,3 @@ func (p *G2) HashToPoint(key, non []byte) bool {
 	p.Add(&np[1])
 	return true
 }
-
-

@@ -142,5 +142,3 @@ func GMarshal(p G, comp int) (res []byte) {
 	}
 	return
 }
-
-

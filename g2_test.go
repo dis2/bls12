@@ -58,7 +58,6 @@ func BenchmarkHashToPointRelicG2(b *testing.B) {
 	}
 }
 
-
 func TestHashToPointG2(t *testing.T) {
 	var p G2
 	var buf [512]byte
@@ -86,7 +85,6 @@ func TestHashToPointFastG2(t *testing.T) {
 		}
 	}
 }
-
 
 func TestVectorG2Compressed(t *testing.T) {
 	var (

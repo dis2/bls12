@@ -1,4 +1,5 @@
 package bls12
+
 // Explicit formulas only.
 
 // Fancy hash:
@@ -55,7 +56,7 @@ func MapXtoY(t, x, y Field) bool {
 	y2, c := t.New(), t.New()
 	x.Set(t)
 	// There is no bound, make up arbitrary one
-	for i:=0; i < 1000; i++ {
+	for i := 0; i < 1000; i++ {
 		// y2 = y^2 = x^3 + 4
 		y2.Square(x)
 		y2.Mul(y2, x)
@@ -68,5 +69,3 @@ func MapXtoY(t, x, y Field) bool {
 	}
 	return false
 }
-
-

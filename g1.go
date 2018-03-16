@@ -64,7 +64,7 @@ func (p *G1) HashToPointBytes(buf *[G1Size]byte) G {
 	buf[0] &= 0xf
 	var t Fq
 	t.Unmarshal(buf[:])
-	FouqueMapXtoY(&t,&p.X,&p.Y)
+	FouqueMapXtoY(&t, &p.X, &p.Y)
 	// match parity of y with t
 	if t.Limbs[0]&1 != p.Y.Limbs[0]&1 {
 		p.Y.Neg(&p.Y)
@@ -117,5 +117,3 @@ func (p *G1) MarshalUncompressed() []byte {
 func (p *G1) GetSize() int {
 	return G1Size
 }
-
-

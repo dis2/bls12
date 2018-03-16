@@ -69,7 +69,6 @@ func BenchmarkHashToPointRelicG1(b *testing.B) {
 	}
 }
 
-
 func TestHashToPointG1(t *testing.T) {
 	var p G1
 	var buf [512]byte
@@ -77,7 +76,7 @@ func TestHashToPointG1(t *testing.T) {
 		buf[0] = byte(i)
 		buf[1] = byte(i >> 8)
 		buf[2] = byte(i >> 16)
-		p.HashToPoint(buf[:],buf[:])
+		p.HashToPoint(buf[:], buf[:])
 		if !p.Check() {
 			t.Fatalf("point landed in wrong subgroup for %d\n", i)
 		}
@@ -97,7 +96,6 @@ func TestHashToPointFastG1(t *testing.T) {
 		}
 	}
 }
-
 
 func TestVectorG1Compressed(t *testing.T) {
 	//	t.Run("Compressed", func(t *testing.T) {

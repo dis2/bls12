@@ -18,5 +18,3 @@ func initPending() {
 	C.core_init()
 	C.ep_param_set_any_pairf()
 }
-
-

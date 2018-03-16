@@ -110,4 +110,3 @@ func (p *G2) MarshalUncompressed() []byte {
 func (p *G2) GetSize() int {
 	return G2Size
 }
-
