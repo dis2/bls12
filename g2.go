@@ -53,14 +53,14 @@ func (p *G2) HashToPoint(msg []byte) G {
 	t.C[1].Unmarshal(t.C[0].Unmarshal(h[:]))
 	x, y := FouqueMapXtoY(&t)
 	p.SetXY(x, y)
-	p.ScaleByCofactor()
+	p.ScaleByCofactorFast()
 	return p
 }
 
 func (p *G2) MapIntToPoint(in Field) G {
 	x, y := MapXtoY(in.(*Fq2))
 	p.SetXY(x, y)
-	p.ScaleByCofactor()
+	p.ScaleByCofactorFast()
 	return p
 }
 

@@ -64,6 +64,10 @@ func (p *G2) ScaleByCofactor() G {
 	C.ep2_scale_by_cofactor(p.l())
 	return p
 }
+func (p *G2) ScaleByCofactorFast() G {
+	C.ep2_mul_cof_b12(p.l(), p.l())
+	return p
+}
 
 // p = s * G2(p)
 func (p *G2) ScalarMult(s *Scalar) G {
