@@ -20,8 +20,6 @@ type Field interface {
 	Marshal() []byte
 	Unmarshal([]byte) []byte
 	Y2FromX(Field) Field
-	l() *Limb
-	le(Field) *Limb
 	Copy() Field
 	Set(Field)
 	New() Field

@@ -3,12 +3,6 @@ package bls12
 import "fmt"
 import "math/big"
 
-type Limbs [NLimbs]Limb
-
-type Fq struct {
-	Limbs
-}
-
 func (e *Fq) opt(x Field) *Fq {
 	v, ok := x.(*Fq)
 	if !ok && x != nil {

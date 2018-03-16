@@ -14,6 +14,13 @@ package bls12
 import "C"
 import "bytes"
 
+type Limbs [NLimbs]Limb
+
+type Fq struct {
+	Limbs
+}
+
+
 func (e *Fq) l() *Limb {
 	return &e.Limbs[0]
 }
@@ -43,13 +50,13 @@ func (e *Fq) Square(x Field) Field {
 
 // e = a + b
 func (e *Fq) Add(a, b Field) Field {
-	C._fp_add(e.l(), e.le(a), b.l())
+	C._fp_add(e.l(), e.le(a), b.(*Fq).l())
 	return e
 }
 
 // e = a - b
 func (e *Fq) Sub(a, b Field) Field {
-	C._fp_sub(e.l(), e.le(a), b.l())
+	C._fp_sub(e.l(), e.le(a), b.(*Fq).l())
 	return e
 }
 
@@ -67,20 +74,20 @@ func (e *Fq) Neg(x Field) Field {
 
 // e == x
 func (e *Fq) Equal(x Field) bool {
-	return C.fp_cmp(e.l(), x.l()) == C.CMP_EQ
+	return C.fp_cmp(e.l(), x.(*Fq).l()) == C.CMP_EQ
 }
 
 // e > x
 func (e *Fq) GreaterThan(x Field) bool {
 	var buf1, buf2 [48]byte
 	C.fp_write_bin((*C.uint8_t)(&buf1[0]), 48, e.l())
-	C.fp_write_bin((*C.uint8_t)(&buf2[0]), 48, x.l())
+	C.fp_write_bin((*C.uint8_t)(&buf2[0]), 48, x.(*Fq).l())
 	return bytes.Compare(buf1[:], buf2[:]) == 1
 }
 
 // e = a * b
 func (e *Fq) Mul(a, b Field) Field {
-	C._fp_mul(e.l(), e.le(a), b.l())
+	C._fp_mul(e.l(), e.le(a), b.(*Fq).l())
 	return e
 }
 
