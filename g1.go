@@ -55,7 +55,6 @@ func (p *G1) HashToPoint(msg []byte) *G1 {
 	h[0] &= 0x0f
 	t.Unmarshal(h[:])
 	x, y := FouqueMapXtoY(&t)
-	y.CopyParity(&t)
 	p.SetXY(x, y)
 	p.ScaleByCofactor()
 	return p
