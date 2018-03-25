@@ -69,7 +69,7 @@ const (
 // Unmarshal G1 or G2 point.
 func GUnmarshal(p G, in []byte) (res []byte) {
 	size := p.GetSize()
-	if len(in) < size {
+	if !(len(in) == size || len(in) == 2*size) {
 		return nil
 	}
 	var bin = make([]byte, size)
