@@ -8,6 +8,7 @@ import "encoding/hex"
 type G interface {
 	Copy() G
 	Add(q G) G
+	Double() G
 	ScalarMult(s *Scalar) G
 	ScalarBaseMult(s *Scalar) G
 	SetXY(x, y Field) G

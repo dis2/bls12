@@ -6,6 +6,7 @@ package bls12
 // #include "relic_fp.h"
 // #include "relic_epx.h"
 // void _ep2_add(ep2_t r, const ep2_t p, const ep2_t q) { ep2_add(r, p, q); }
+// void _ep2_dbl(ep2_t r, const ep2_t p) { ep2_dbl(r, p); }
 // void _ep2_neg(ep2_t r, const ep2_t p) { ep2_neg(r, p); }
 // void _ep2_mul(ep2_t r, const ep2_t p, const bn_t k) { ep2_mul(r, p, k); }
 // void _fp_neg(fp_t r, const fp_t p);
@@ -86,6 +87,13 @@ func (p *G2) Add(q G) G {
 	C._ep2_add(p.l(), p.l(), q.(*G2).l())
 	return p
 }
+
+// p = 2p
+func (p *G2) Double() G {
+	C._ep2_dbl(p.l(), p.l())
+	return p
+}
+
 
 func (p *G2) HashToPointRelic(msg []byte) G {
 	C.ep2_map(p.l(), (*C.uint8_t)(&msg[0]), C.int(len(msg)))

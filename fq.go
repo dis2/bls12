@@ -130,7 +130,7 @@ func (e *Fq) ToInt() (res []*big.Int) {
 }
 
 func (e *Fq) String() string {
-	return fmt.Sprintf("Fq(%d)", e.ToInt())
+	return fmt.Sprintf("%d", e.ToInt()[0])
 }
 
 func (e *Fq) IsResidue() bool {

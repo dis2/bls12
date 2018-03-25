@@ -101,7 +101,7 @@ func (e *Fq2) Cube(x Field) Field {
 // e = 64 bit immediate n
 func (e *Fq2) SetInt64(n int64) Field {
 	e.C[0].SetInt64(n)
-	e.C[1].SetInt64(n)
+	e.C[1] = Zero
 	return e
 }
 
