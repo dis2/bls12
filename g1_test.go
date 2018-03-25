@@ -2,6 +2,7 @@ package bls12
 
 import (
 	"bytes"
+	"fmt"
 	"crypto/rand"
 	"io/ioutil"
 	"testing"
@@ -43,7 +44,7 @@ func BenchmarkHashToPointG1(b *testing.B) {
 		buf[0] = byte(i)
 		buf[1] = byte(i >> 8)
 		buf[2] = byte(i >> 16)
-		g1.HashToPoint(buf[:], buf[:])
+		g1.HashToPoint(buf[:])
 	}
 }
 
@@ -76,7 +77,7 @@ func TestHashToPointG1(t *testing.T) {
 		buf[0] = byte(i)
 		buf[1] = byte(i >> 8)
 		buf[2] = byte(i >> 16)
-		p.HashToPoint(buf[:], buf[:])
+		p.HashToPoint(buf[:])
 		if !p.Check() {
 			t.Fatalf("point landed in wrong subgroup for %d\n", i)
 		}
@@ -93,6 +94,21 @@ func TestHashToPointFastG1(t *testing.T) {
 		p.HashToPointFast(buf[:])
 		if !p.Check() {
 			t.Fatalf("point landed in wrong subgroup for %d\n", i)
+		}
+	}
+}
+
+func TestVectorG1HashToPoint(t *testing.T) {
+	data := readFile(t, "testdata/g1_hashtopoint.dat")
+	for i := 0; i < 1000; i++ {
+		var g1, g1t G1
+		data = g1.Unmarshal(data)
+		if data == nil {
+			t.Fatal("failed to unmarshal test data")
+		}
+		g1t.HashToPoint([]byte(fmt.Sprintf("%d", i)))
+		if !g1t.Equal(&g1) {
+			t.Fatalf("wrong hash at %d\n", i)
 		}
 	}
 }

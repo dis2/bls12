@@ -14,7 +14,7 @@ type G interface {
 	SetXY(x, y Field) G
 	SetNormalized() G
 	ScaleByCofactor() G
-	HashToPoint(msg, non []byte) bool
+	HashToPoint(msg []byte) G
 	HashToPointFast(msg []byte) G
 	MapIntToPoint(Field) bool
 	GetSize() int

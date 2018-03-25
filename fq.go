@@ -19,7 +19,7 @@ func (e *Fq) opt(x Field) *Fq {
 // parity 1 - neg(x) > x
 // parity 0 - neg(x) <= x
 func (e *Fq) CopyParity(y Field) Field {
-	if e.GreaterThan(&QMinus1Half) != e.GreaterThan(&QMinus1Half) {
+	if e.GreaterThan(&QMinus1Half) != y.GreaterThan(&QMinus1Half) {
 		e.Neg(e)
 	}
 	return e
