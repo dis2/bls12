@@ -1,4 +1,11 @@
-Bilinear pairing BLS12-381. 
+## DEPRECATED
+
+More useful implementations exist:
+* https://github.com/supranational/blst/tree/master/bindings/go
+* https://github.com/kilic/bls12-381
+...
+
+Bilinear pairing BLS12-381.
 
 ## RTFM
 
